@@ -3,6 +3,58 @@
 {% block header %}Список заказов{% endblock %}
 
 {% block content %}
+<div class="mb-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <div class="glass-card rounded-2xl p-4">
+        <p class="text-xs uppercase text-gray-500 font-bold mb-1">Всего заказов</p>
+        <p class="text-2xl font-bold text-[#3E2310]">{{ total_orders }}</p>
+    </div>
+    <div class="glass-card rounded-2xl p-4">
+        <p class="text-xs uppercase text-gray-500 font-bold mb-1">Выручка (всего)</p>
+        <p class="text-2xl font-bold text-[#3E2310]">{{ revenue_total }} <span class="text-sm text-gray-400">сум</span></p>
+    </div>
+    <div class="glass-card rounded-2xl p-4 flex flex-wrap gap-2 items-center">
+        <span class="chip bg-blue-100 text-blue-700">Новые: {{ status_counts.get('new', 0) }}</span>
+        <span class="chip bg-yellow-100 text-yellow-700">В пути: {{ status_counts.get('delivery', 0) }}</span>
+        <span class="chip bg-green-100 text-green-700">Готово: {{ status_counts.get('done', 0) }}</span>
+        <span class="chip bg-gray-100 text-gray-600">Оплачено: {{ status_counts.get('paid', 0) }}</span>
+    </div>
+</div>
+
+<div class="glass-card rounded-2xl p-4 mb-6">
+    <form method="get" class="flex flex-col xl:flex-row xl:items-center gap-3">
+        <input type="text" name="q" value="{{ filters.q }}" placeholder="Поиск по ID, имени или телефону"
+            class="flex-1 bg-white border border-[#E0CCB7] rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6B3F1E]/20">
+        <select name="status"
+            class="bg-white border border-[#E0CCB7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6B3F1E]/20">
+            <option value="all" {% if filters.status == 'all' %}selected{% endif %}>Все статусы</option>
+            <option value="new" {% if filters.status == 'new' %}selected{% endif %}>Новые</option>
+            <option value="paid" {% if filters.status == 'paid' %}selected{% endif %}>Оплачены</option>
+            <option value="delivery" {% if filters.status == 'delivery' %}selected{% endif %}>В пути</option>
+            <option value="done" {% if filters.status == 'done' %}selected{% endif %}>Готово</option>
+            <option value="cancelled" {% if filters.status == 'cancelled' %}selected{% endif %}>Отменены</option>
+        </select>
+        <select name="payment"
+            class="bg-white border border-[#E0CCB7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6B3F1E]/20">
+            <option value="all" {% if filters.payment == 'all' %}selected{% endif %}>Все оплаты</option>
+            <option value="cash" {% if filters.payment == 'cash' %}selected{% endif %}>Наличные</option>
+            <option value="card" {% if filters.payment == 'card' %}selected{% endif %}>Payme</option>
+            <option value="click" {% if filters.payment == 'click' %}selected{% endif %}>Click</option>
+        </select>
+        <select name="order_type"
+            class="bg-white border border-[#E0CCB7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6B3F1E]/20">
+            <option value="all" {% if filters.order_type == 'all' %}selected{% endif %}>Все типы</option>
+            <option value="product" {% if filters.order_type == 'product' %}selected{% endif %}>Товары</option>
+            <option value="debt_repayment" {% if filters.order_type == 'debt_repayment' %}selected{% endif %}>Погашение долга</option>
+        </select>
+        <button type="submit"
+            class="bg-[#3E2310] text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-[#543116] transition">
+            Применить
+        </button>
+        <a href="/admin/orders"
+            class="text-sm font-semibold text-[#6B3F1E] hover:text-[#543116]">Сбросить</a>
+    </form>
+</div>
+
 <div class="bg-white shadow-coffee rounded-2xl overflow-hidden glass-card my-6">
     <div class="overflow-x-auto">
         <table class="min-w-full table-auto">
@@ -11,6 +63,8 @@
                     <th class="py-4 px-6 text-left">ID</th>
                     <th class="py-4 px-6 text-left">Клиент</th>
                     <th class="py-4 px-6 text-center">Дата</th>
+                    <th class="py-4 px-6 text-center">Тип</th>
+                    <th class="py-4 px-6 text-center">Оплата</th>
                     <th class="py-4 px-6 text-center">Сумма</th>
                     <th class="py-4 px-6 text-center">Статус</th>
                     <th class="py-4 px-6 text-center">Действия</th>
@@ -26,6 +80,22 @@
                     </td>
                     <td class="py-4 px-6 text-center">
                         {{ order.created_at | datetime_uz }}
+                    </td>
+                    <td class="py-4 px-6 text-center">
+                        {% if order.order_type == 'debt_repayment' %}
+                        <span class="bg-purple-100 text-purple-700 py-1 px-3 rounded-full text-xs font-bold">Долг</span>
+                        {% else %}
+                        <span class="bg-slate-100 text-slate-600 py-1 px-3 rounded-full text-xs font-bold">Товары</span>
+                        {% endif %}
+                    </td>
+                    <td class="py-4 px-6 text-center">
+                        {% if order.payment_method == 'cash' %}
+                        <span class="bg-amber-100 text-amber-700 py-1 px-3 rounded-full text-xs font-bold">Наличные</span>
+                        {% elif order.payment_method == 'click' %}
+                        <span class="bg-indigo-100 text-indigo-700 py-1 px-3 rounded-full text-xs font-bold">Click</span>
+                        {% else %}
+                        <span class="bg-emerald-100 text-emerald-700 py-1 px-3 rounded-full text-xs font-bold">Payme</span>
+                        {% endif %}
                     </td>
                     <td class="py-4 px-6 text-center font-bold text-[#3E2310]">
                         {{ order.total_amount }} сум
@@ -50,10 +120,34 @@
                         {% endif %}
                     </td>
                     <td class="py-4 px-6 text-center">
-                        <a href="/admin/orders/{{ order.id }}"
-                            class="bg-[#F2E8DC] hover:bg-[#D6C0AD] text-[#3E2310] py-2 px-4 rounded-xl text-xs font-bold transition duration-200 inline-flex items-center">
-                            <i class="fas fa-eye mr-2"></i> Подробнее
-                        </a>
+                        <div class="flex flex-col items-center gap-2">
+                            <a href="/admin/orders/{{ order.id }}"
+                                class="bg-[#F2E8DC] hover:bg-[#D6C0AD] text-[#3E2310] py-2 px-4 rounded-xl text-xs font-bold transition duration-200 inline-flex items-center">
+                                <i class="fas fa-eye mr-2"></i> Подробнее
+                            </a>
+                            {% if order.status != 'cancelled' %}
+                            <form action="/admin/orders/{{ order.id }}/status" method="POST" class="flex gap-2 items-center">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <select name="status"
+                                    class="bg-white border border-[#E0CCB7] rounded-lg px-2 py-1 text-xs focus:outline-none">
+                                    <option value="new" {% if order.status == 'new' %}selected{% endif %}>Новый</option>
+                                    <option value="paid" {% if order.status == 'paid' %}selected{% endif %}>Оплачен</option>
+                                    <option value="delivery" {% if order.status == 'delivery' %}selected{% endif %}>В пути</option>
+                                    <option value="done" {% if order.status == 'done' %}selected{% endif %}>Готово</option>
+                                </select>
+                                <button type="submit"
+                                    class="px-3 py-1 rounded-lg text-xs font-bold bg-[#3E2310] text-white hover:bg-[#543116]">
+                                    Обновить
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="py-6 px-6 text-center text-gray-500">
+                        Заказы не найдены по выбранным фильтрам.
                     </td>
                 </tr>
                 {% endfor %}
@@ -65,13 +159,14 @@
     {% if total_pages > 1 %}
     <div class="px-6 py-4 border-t border-[#EFE6DB] flex justify-center">
         <div class="flex space-x-2">
+            {% set query_string = "q=" ~ filters.q ~ "&status=" ~ filters.status ~ "&payment=" ~ filters.payment ~ "&order_type=" ~ filters.order_type %}
             {% if page > 1 %}
-            <a href="?page={{ page - 1 }}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">← Назад</a>
+            <a href="?page={{ page - 1 }}&{{ query_string }}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">← Назад</a>
             {% endif %}
 
             <span class="px-3 py-1 font-bold">{{ page }} / {{ total_pages }}</span>
 
-            {% if page < total_pages %} <a href="?page={{ page + 1 }}"
+            {% if page < total_pages %} <a href="?page={{ page + 1 }}&{{ query_string }}"
                 class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Вперед →</a>
                 {% endif %}
         </div>

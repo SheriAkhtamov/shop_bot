@@ -3,25 +3,34 @@
 {% block header %}Клиенты{% endblock %}
 
 {% block content %}
-<div class="bg-white rounded px-8 pt-6 pb-8 mb-4">
-    <h4 class="font-bold mb-4">Поиск пользователя</h4>
-    <form action="/admin/users" method="GET" class="flex gap-4 items-end">
+<div class="glass-card rounded-2xl p-6 mb-6">
+    <h4 class="font-bold mb-4 text-[#3E2310]">Поиск пользователя</h4>
+    <form action="/admin/users" method="GET" class="flex flex-col xl:flex-row gap-4 items-end">
         <div class="flex-grow">
-            <label class="block text-gray-700 text-xs font-bold mb-2">Имя или Телефон</label>
-            <input name="q" type="text" value="{{ request.query_params.get('q', '') }}" 
-                   class="border rounded w-full py-2 px-3 text-gray-700" placeholder="Введите имя или номер...">
+            <label class="block text-gray-500 text-xs font-bold mb-2">Имя, ID или телефон</label>
+            <input name="q" type="text" value="{{ filters.q }}" 
+                   class="border border-[#E0CCB7] rounded-xl w-full py-2 px-3 text-gray-700" placeholder="Введите имя, ID или номер...">
         </div>
-        <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" type="submit">
+        <div>
+            <label class="block text-gray-500 text-xs font-bold mb-2">Долги</label>
+            <select name="debt" class="border border-[#E0CCB7] rounded-xl py-2 px-3 text-gray-700">
+                <option value="all" {% if filters.debt == 'all' %}selected{% endif %}>Все</option>
+                <option value="with" {% if filters.debt == 'with' %}selected{% endif %}>С долгом</option>
+                <option value="without" {% if filters.debt == 'without' %}selected{% endif %}>Без долга</option>
+            </select>
+        </div>
+        <button class="bg-[#3E2310] hover:bg-[#543116] text-white font-bold py-2 px-4 rounded-xl" type="submit">
             Найти
         </button>
+        <a href="/admin/users" class="text-sm font-semibold text-[#6B3F1E] hover:text-[#543116]">Сбросить</a>
     </form>
 </div>
 
 <!-- Список -->
-<div class="bg-white shadow-md rounded my-6 overflow-x-auto">
+<div class="bg-white shadow-coffee rounded-2xl my-6 overflow-x-auto glass-card">
     <table class="min-w-full table-auto">
         <thead>
-            <tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+            <tr class="bg-[#EFE6DB] text-[#3E2310] uppercase text-sm leading-normal font-bold">
                 <th class="py-3 px-6 text-left">ID</th>
                 <th class="py-3 px-6 text-left">Клиент</th>
                 <th class="py-3 px-6 text-left">Телефон</th>
@@ -29,9 +38,9 @@
                 <th class="py-3 px-6 text-center">Действия</th>
             </tr>
         </thead>
-        <tbody class="text-gray-600 text-sm font-light">
+        <tbody class="text-gray-700 text-sm font-medium">
             {% for user in users %}
-            <tr class="border-b border-gray-200 hover:bg-gray-100">
+            <tr class="border-b border-[#EFE6DB] hover:bg-[#F9F4EF]">
                 <td class="py-3 px-6 text-left">{{ user.id }}</td>
                 <td class="py-3 px-6 text-left">
                     <div class="flex items-center">
@@ -50,7 +59,7 @@
                 </td>
                 <td class="py-3 px-6 text-center">
                     <button onclick="openDebtModal('{{ user.id }}', '{{ user.username or '' }}', '{{ user.debt }}')" 
-                            class="text-blue-500 hover:text-blue-700 font-bold border border-blue-500 rounded px-3 py-1 text-xs hover:bg-blue-50">
+                            class="text-[#3E2310] hover:text-[#543116] font-bold border border-[#E0CCB7] rounded-xl px-3 py-1 text-xs hover:bg-[#F2E8DC]">
                         💰 Управлять долгом
                     </button>
                 </td>
