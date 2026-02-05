@@ -609,6 +609,8 @@ async def orders_list(
     try:
         page = int(request.query_params.get("page", 1))
     except: pass
+    if page < 1:
+        page = 1
     
     limit = 20
     offset = (page - 1) * limit
