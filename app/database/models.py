@@ -96,6 +96,13 @@ class Favorite(Base):
         UniqueConstraint('user_id', 'product_id', name='_user_product_favorite_uc'),
     )
 
+# --- Rate Limiting ---
+class OrderRateLimit(Base):
+    __tablename__ = "order_rate_limits"
+
+    key: Mapped[str] = mapped_column(String, primary_key=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, index=True)
+
 # --- Заказы ---
 class Order(Base):
     __tablename__ = "orders"

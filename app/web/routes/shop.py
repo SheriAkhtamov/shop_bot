@@ -1,13 +1,15 @@
 from typing import List
+from datetime import datetime, timedelta
 from fastapi import APIRouter, Request, Depends, HTTPException, Query, Form
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_, update
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import selectinload
 
 from app.database.core import get_db
-from app.database.models import User, Product, Category, CartItem, Order, OrderItem, UserAddress, Favorite
+from app.database.models import User, Product, Category, CartItem, Order, OrderItem, UserAddress, Favorite, OrderRateLimit
 from app.bot.loader import bot
 from app.utils.security import check_telegram_auth
 from app.utils.payment import generate_payme_link, generate_click_link
@@ -22,18 +24,32 @@ from app.database.repositories.cart import CartRepository
 router = APIRouter(prefix="/shop", tags=["shop"])
 templates = Jinja2Templates(directory="app/templates")
 
-# Simple In-Memory Rate Limiter for Order Creation
-import time
-_order_rate_limit: dict = {}  # user_id -> last_order_timestamp
-
-def check_rate_limit(user_id: int, cooldown_seconds: int = 10) -> bool:
+async def check_rate_limit(
+    user_id: int,
+    session: AsyncSession,
+    cooldown_seconds: int = 10,
+) -> bool:
     """Returns True if user is rate limited (should block), False if OK."""
-    now = time.time()
-    last_order = _order_rate_limit.get(user_id, 0)
-    if now - last_order < cooldown_seconds:
-        return True  # Rate limited
-    _order_rate_limit[user_id] = now
-    return False  # OK
+    now = datetime.utcnow()
+    expires_at = now + timedelta(seconds=cooldown_seconds)
+    key = f"order_rate_limit:{user_id}"
+
+    stmt = (
+        insert(OrderRateLimit)
+        .values(key=key, expires_at=expires_at)
+        .on_conflict_do_update(
+            index_elements=[OrderRateLimit.key],
+            set_={"expires_at": expires_at},
+            where=OrderRateLimit.expires_at <= now,
+        )
+        .returning(OrderRateLimit.key)
+    )
+    result = await session.execute(stmt)
+    allowed = result.scalar_one_or_none() is not None
+    if allowed:
+        await session.commit()
+        return False
+    return True
 
 @router.post("/auth")
 async def auth_user(request: Request, initData: str = Form(...), session: AsyncSession = Depends(get_db)):
@@ -237,7 +253,7 @@ async def create_order(
     session: AsyncSession = Depends(get_db)
 ):
     # Rate Limiting: не более 1 заказа в 10 секунд
-    if check_rate_limit(user.id, cooldown_seconds=10):
+    if await check_rate_limit(user.id, session, cooldown_seconds=10):
         return JSONResponse({"status": "error", "message": "Подождите немного перед созданием нового заказа"}, status_code=429)
     
     from app.services.order_service import OrderService
