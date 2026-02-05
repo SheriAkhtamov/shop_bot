@@ -4,47 +4,48 @@
 
 {% block content %}
 <div class="mb-6 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
-    <div class="flex items-center gap-3">
-        <a href="/admin/products/new" class="admin-btn inline-flex items-center">
-            <i class="fas fa-plus mr-2"></i> Добавить товар
-        </a>
-        <a href="/admin/products" class="text-sm font-semibold text-[#5b3df5] hover:text-[#4b32d2]">Обновить</a>
-    </div>
+    <a href="/admin/products/new"
+        class="bg-[#6B3F1E] hover:bg-[#543116] text-white font-bold py-3 px-6 rounded-xl shadow-lg transition duration-300 inline-flex items-center">
+        <i class="fas fa-plus mr-2"></i> Добавить товар
+    </a>
     <div class="flex flex-wrap items-center gap-2 text-xs font-bold">
-        <span class="chip bg-white/90 text-[#0f172a] border border-slate-200">Всего: {{ stats.total }}</span>
-        <span class="chip bg-emerald-50 text-emerald-700 border border-emerald-100">Активные: {{ stats.active }}</span>
-        <span class="chip bg-slate-50 text-slate-600 border border-slate-200">Архив: {{ stats.inactive }}</span>
-        <span class="chip bg-rose-50 text-rose-600 border border-rose-100">Низкий остаток: {{ stats.low_stock }}</span>
+        <span class="chip bg-[#EFE6DB] text-[#3E2310]">Всего: {{ stats.total }}</span>
+        <span class="chip bg-green-100 text-green-700">Активные: {{ stats.active }}</span>
+        <span class="chip bg-gray-100 text-gray-600">Архив: {{ stats.inactive }}</span>
+        <span class="chip bg-red-100 text-red-600">Низкий остаток: {{ stats.low_stock }}</span>
     </div>
 </div>
 
-<div class="admin-card p-4 mb-6">
+<div class="glass-card rounded-2xl p-4 mb-6">
     <form method="get" class="flex flex-col xl:flex-row xl:items-center gap-3">
         <input type="text" name="q" value="{{ filters.q }}" placeholder="Поиск по названию"
-            class="admin-input flex-1 text-sm">
-        <select name="status" class="admin-input text-sm">
+            class="flex-1 bg-white border border-[#E0CCB7] rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6B3F1E]/20">
+        <select name="status"
+            class="bg-white border border-[#E0CCB7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6B3F1E]/20">
             <option value="active" {% if filters.status == 'active' %}selected{% endif %}>Активные</option>
             <option value="inactive" {% if filters.status == 'inactive' %}selected{% endif %}>Архив</option>
             <option value="all" {% if filters.status == 'all' %}selected{% endif %}>Все</option>
         </select>
-        <select name="stock" class="admin-input text-sm">
+        <select name="stock"
+            class="bg-white border border-[#E0CCB7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6B3F1E]/20">
             <option value="all" {% if filters.stock == 'all' %}selected{% endif %}>Все остатки</option>
             <option value="low" {% if filters.stock == 'low' %}selected{% endif %}>Низкий остаток ≤ 5</option>
             <option value="out" {% if filters.stock == 'out' %}selected{% endif %}>Нет на складе</option>
         </select>
-        <button type="submit" class="admin-btn text-sm">
+        <button type="submit"
+            class="bg-[#3E2310] text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-[#543116] transition">
             Применить
         </button>
         <a href="/admin/products"
-            class="text-sm font-semibold text-[#5b3df5] hover:text-[#4b32d2]">Сбросить</a>
+            class="text-sm font-semibold text-[#6B3F1E] hover:text-[#543116]">Сбросить</a>
     </form>
 </div>
 
-<div class="admin-card overflow-hidden">
+<div class="bg-white shadow-coffee rounded-2xl overflow-hidden glass-card">
     <div class="overflow-x-auto">
         <table class="min-w-full table-auto">
             <thead>
-                <tr class="bg-[#f8fafc] text-[#0f172a] uppercase text-xs leading-normal font-bold tracking-widest">
+                <tr class="bg-[#EFE6DB] text-[#3E2310] uppercase text-sm leading-normal font-bold">
                     <th class="py-4 px-6 text-left first:rounded-tl-2xl">ID</th>
                     <th class="py-4 px-6 text-center">Фото</th>
                     <th class="py-4 px-6 text-left">Название (RU)</th>
@@ -56,55 +57,55 @@
             </thead>
             <tbody class="text-gray-700 text-sm font-medium">
                 {% for product in products %}
-                <tr class="border-b border-[#eef2f7] hover:bg-[#f8fafc] transition duration-200">
-                    <td class="py-4 px-6 text-left whitespace-nowrap font-bold text-[#0f172a]">{{ product.id }}</td>
+                <tr class="border-b border-[#EFE6DB] hover:bg-[#F9F4EF] transition duration-200">
+                    <td class="py-4 px-6 text-left whitespace-nowrap font-bold text-[#6B3F1E]">{{ product.id }}</td>
                     <td class="py-4 px-6 text-center">
                         {% if product.image_path %}
-                        <img src="{{ product.image_path }}" class="h-12 w-12 rounded-xl object-cover mx-auto shadow-sm ring-2 ring-white">
+                        <img src="{{ product.image_path }}" class="h-12 w-12 rounded-xl object-cover mx-auto shadow-sm">
                         {% else %}
                         <div
-                            class="h-12 w-12 rounded-xl bg-[#eef2ff] mx-auto flex items-center justify-center text-[#5b3df5]">
+                            class="h-12 w-12 rounded-xl bg-[#EFE6DB] mx-auto flex items-center justify-center text-[#6B3F1E]">
                             <i class="fas fa-coffee"></i>
                         </div>
                         {% endif %}
                     </td>
-                    <td class="py-4 px-6 text-left font-semibold text-[#0f172a]">{{ product.name_ru }}</td>
+                    <td class="py-4 px-6 text-left">{{ product.name_ru }}</td>
                     <td class="py-4 px-6 text-center font-bold">{{ product.price }} сум</td>
                     <td class="py-4 px-6 text-center">
                         {% if product.stock > 0 %}
-                        <span class="bg-emerald-50 text-emerald-700 py-1 px-3 rounded-full text-xs font-bold border border-emerald-100">{{
+                        <span class="bg-green-100 text-green-800 py-1 px-3 rounded-full text-xs font-bold">{{
                             product.stock }} шт</span>
                         {% else %}
-                        <span class="bg-rose-50 text-rose-600 py-1 px-3 rounded-full text-xs font-bold border border-rose-100">Нет</span>
+                        <span class="bg-red-100 text-red-800 py-1 px-3 rounded-full text-xs font-bold">Нет</span>
                         {% endif %}
                         <form action="/admin/products/{{ product.id }}/stock" method="POST" class="mt-2 flex justify-center gap-2">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                             <input type="number" min="0" name="stock" value="{{ product.stock }}"
-                                class="w-20 admin-input text-xs text-center">
+                                class="w-20 border border-[#E0CCB7] rounded-lg px-2 py-1 text-xs text-center">
                             <button type="submit"
-                                class="px-2 py-1 rounded-lg text-xs font-bold bg-[#0f172a] text-white hover:bg-[#1e293b]">
+                                class="px-2 py-1 rounded-lg text-xs font-bold bg-[#3E2310] text-white hover:bg-[#543116]">
                                 Сохранить
                             </button>
                         </form>
                     </td>
                     <td class="py-4 px-6 text-center">
                         {% if product.is_active %}
-                        <span class="bg-emerald-50 text-emerald-700 py-1 px-3 rounded-full text-xs font-bold border border-emerald-100">Активен</span>
+                        <span class="bg-green-100 text-green-700 py-1 px-3 rounded-full text-xs font-bold">Активен</span>
                         {% else %}
-                        <span class="bg-slate-50 text-slate-500 py-1 px-3 rounded-full text-xs font-bold border border-slate-200">Архив</span>
+                        <span class="bg-gray-100 text-gray-600 py-1 px-3 rounded-full text-xs font-bold">Архив</span>
                         {% endif %}
                     </td>
                     <td class="py-4 px-6 text-center">
                         <div class="flex item-center justify-center space-x-4">
                             <a href="/admin/products/{{ product.id }}/edit"
-                                class="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 hover:bg-indigo-600 hover:text-white transition duration-200 shadow-sm"
+                                class="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 hover:bg-blue-600 hover:text-white transition duration-200 shadow-sm"
                                 title="Редактировать">
                                 <i class="fas fa-edit"></i>
                             </a>
                             <form action="/admin/products/{{ product.id }}/toggle" method="POST" class="inline">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                 <button type="submit"
-                                    class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-700 hover:text-white transition duration-200 shadow-sm"
+                                    class="w-8 h-8 rounded-full bg-[#EFE6DB] flex items-center justify-center text-[#3E2310] hover:bg-[#3E2310] hover:text-white transition duration-200 shadow-sm"
                                     title="Активировать/Архивировать">
                                     <i class="fas fa-power-off"></i>
                                 </button>
@@ -113,7 +114,7 @@
                                 onsubmit="return confirm('Вы уверены?');" class="inline">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                 <button type="submit"
-                                    class="w-8 h-8 rounded-full bg-rose-50 flex items-center justify-center text-rose-600 hover:bg-rose-600 hover:text-white transition duration-200 shadow-sm"
+                                    class="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center text-red-600 hover:bg-red-600 hover:text-white transition duration-200 shadow-sm"
                                     title="Удалить">
                                     <i class="fas fa-trash"></i>
                                 </button>
