@@ -14,7 +14,7 @@ from app.config import settings
 from app.web.routes import admin, shop, payme, click
 from app.database.core import engine, Base, async_session_maker
 from app.database.models import User
-from app.utils.security import get_password_hash
+from app.utils.security import get_password_hash, verify_password
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -45,8 +45,8 @@ async def create_default_admin():
                 await session.commit()
                 logging.info(f"✅ Суперадмин создан! Логин: {settings.SUPERADMIN_LOGIN}")
             else:
-                # Обновляем пароль, если нужно (всегда обновляем, чтобы гарантировать доступ)
-                if admin.password_hash != pwd_hash:
+                # Обновляем пароль, если нужно (проверяем соответствие текущего пароля)
+                if not verify_password(settings.SUPERADMIN_PASSWORD, admin.password_hash):
                     admin.password_hash = pwd_hash
                     session.add(admin)
                     await session.commit()
