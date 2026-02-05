@@ -6,7 +6,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <!-- KPI Cards -->
-<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
     <!-- Card 1: Users -->
     <div class="admin-card p-6">
         <div class="flex items-center">
@@ -60,45 +60,29 @@
             </div>
         </div>
     </div>
-</div>
-
-    <!-- Card 2: Orders Today -->
-    <div class="glass-card rounded-2xl p-6 border-l-4 border-blue-500">
+    <!-- Card 5: Average Order -->
+    <div class="admin-card p-6">
         <div class="flex items-center">
-            <div class="p-3 rounded-full bg-blue-100 text-blue-500">
-                <i class="fas fa-shopping-bag fa-2x"></i>
+            <div class="p-3 rounded-2xl bg-[#fef9c3] text-[#ca8a04]">
+                <i class="fas fa-coins fa-2x"></i>
             </div>
             <div class="ml-4">
-                <p class="mb-2 text-sm font-medium text-gray-600 uppercase">Заказов сегодня</p>
-                <p class="text-3xl font-bold text-[#3E2310]">{{ orders_today }}</p>
+                <p class="mb-2 text-xs font-semibold text-gray-500 uppercase tracking-widest">Средний чек</p>
+                <p class="text-2xl font-bold text-[#0f172a]">{{ avg_order_value }} <span
+                        class="text-sm text-gray-400">сум</span></p>
             </div>
         </div>
     </div>
 
-    <!-- Card 3: Revenue Month -->
-    <div class="glass-card rounded-2xl p-6 border-l-4 border-green-500">
+    <!-- Card 6: Repeat Customers -->
+    <div class="admin-card p-6">
         <div class="flex items-center">
-            <div class="p-3 rounded-full bg-green-100 text-green-500">
-                <i class="fas fa-money-bill-wave fa-2x"></i>
+            <div class="p-3 rounded-2xl bg-[#e0f2fe] text-[#0ea5e9]">
+                <i class="fas fa-user-check fa-2x"></i>
             </div>
             <div class="ml-4">
-                <p class="mb-2 text-sm font-medium text-gray-600 uppercase">Выручка (мес)</p>
-                <p class="text-2xl font-bold text-[#3E2310]">{{ revenue_month }} <span
-                        class="text-sm text-gray-500">сум</span></p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Card 4: Total Debt -->
-    <div class="glass-card rounded-2xl p-6 border-l-4 border-red-500">
-        <div class="flex items-center">
-            <div class="p-3 rounded-full bg-red-100 text-red-500">
-                <i class="fas fa-hand-holding-usd fa-2x"></i>
-            </div>
-            <div class="ml-4">
-                <p class="mb-2 text-sm font-medium text-gray-600 uppercase">Общий долг</p>
-                <p class="text-2xl font-bold text-red-600">{{ total_debt }} <span
-                        class="text-sm text-gray-500">сум</span></p>
+                <p class="mb-2 text-xs font-semibold text-gray-500 uppercase tracking-widest">Повторные клиенты</p>
+                <p class="text-3xl font-bold text-[#0f172a]">{{ repeat_customers }}</p>
             </div>
         </div>
     </div>
@@ -205,7 +189,7 @@
     </div>
 </div>
 
-<div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
     <div class="glass-card rounded-2xl p-6 shadow-coffee bg-white">
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-xl font-bold text-[#3E2310]">🧾 Последние заказы</h3>
@@ -226,6 +210,29 @@
             </div>
             {% else %}
             <div class="text-sm text-gray-500">Пока нет заказов.</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="glass-card rounded-2xl p-6 shadow-coffee bg-white">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold text-[#3E2310]">🏆 Топ клиенты</h3>
+            <span class="text-xs font-semibold text-[#6B3F1E]">по выручке</span>
+        </div>
+        <div class="space-y-3">
+            {% for customer, orders_count, total_spent in top_customers %}
+            <div class="flex items-center justify-between bg-[#F9F4EF] rounded-xl px-4 py-3">
+                <div>
+                    <p class="font-bold text-[#3E2310]">{{ customer.username or 'Без имени' }}</p>
+                    <p class="text-xs text-gray-500">{{ customer.phone or 'Телефон не указан' }}</p>
+                </div>
+                <div class="text-right">
+                    <p class="font-bold text-[#3E2310]">{{ total_spent }} сум</p>
+                    <span class="text-xs text-gray-500">{{ orders_count }} заказ(ов)</span>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-sm text-gray-500">Недостаточно данных для рейтинга.</div>
             {% endfor %}
         </div>
     </div>
