@@ -12,10 +12,27 @@
         rel="stylesheet">
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script> <!-- Иконки -->
     <style>
+        :root {
+            --admin-bg: #f6f5f2;
+            --admin-surface: #ffffff;
+            --admin-ink: #1f1f1f;
+            --admin-muted: #6b6b6b;
+            --admin-accent: #5b3df5;
+            --admin-accent-2: #2dd4bf;
+            --admin-border: rgba(15, 23, 42, 0.08);
+        }
+
         body {
             font-family: 'Manrope', sans-serif;
-            background-color: #F2E8DC;
-            /* Optional: Add basic noise texture if desired, or keep flat color */
+            background: radial-gradient(circle at top right, rgba(91, 61, 245, 0.12), transparent 45%),
+                radial-gradient(circle at 10% 20%, rgba(45, 212, 191, 0.12), transparent 35%),
+                var(--admin-bg);
+            color: var(--admin-ink);
+        }
+
+        .sidebar {
+            background: linear-gradient(160deg, #0f172a 0%, #1e1b4b 45%, #2c1b5a 100%);
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         .sidebar {
@@ -69,7 +86,8 @@
         <div class="sidebar shadow-2xl h-16 fixed bottom-0 md:relative md:h-auto z-20 w-full md:w-64 flex-shrink-0">
             <div class="md:fixed md:w-64 md:h-screen md:overflow-y-auto">
                 <div class="p-6 text-center md:text-left hidden md:block">
-                    <h1 class="text-2xl font-extrabold text-[#F2E8DC] tracking-wide">COFFEE ADMIN</h1>
+                    <h1 class="text-2xl font-extrabold text-white tracking-wide">COFFEE ADMIN</h1>
+                    <p class="text-xs text-[#cbd5f5] mt-1">Operations & insights</p>
                 </div>
 
                 <ul
@@ -131,15 +149,19 @@
         </div>
 
         <!-- Основной контент -->
-        <div class="main-content flex-1 bg-[#F2E8DC] pb-24 md:pb-8 w-full md:ml-64 relative">
+        <div class="main-content flex-1 bg-transparent pb-24 md:pb-8 w-full md:ml-64 relative">
             <!-- Верхняя полоска (Мобильная) -->
-            <div class="bg-[#3E2310] md:hidden p-4 shadow-lg flex justify-between items-center text-[#F2E8DC]">
+            <div class="bg-[#0f172a] md:hidden p-4 shadow-lg flex justify-between items-center text-white">
                 <h1 class="font-bold text-lg">COFFEE ADMIN</h1>
             </div>
 
             <div class="p-6 md:p-10">
-                <div class="mb-8 flex justify-between items-center">
-                    <h3 class="text-3xl font-bold text-[#3E2310]">{% block header %}Панель управления{% endblock %}</h3>
+                <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    <h3 class="text-3xl font-bold text-[#0f172a]">{% block header %}Панель управления{% endblock %}</h3>
+                    <div class="flex items-center gap-2 text-xs font-semibold text-[#64748b]">
+                        <span class="px-3 py-1 rounded-full bg-white/70 border border-white">Smart Admin</span>
+                        <span class="px-3 py-1 rounded-full bg-white/70 border border-white">Live insights</span>
+                    </div>
                 </div>
 
                 <div class="rounded-3xl">
