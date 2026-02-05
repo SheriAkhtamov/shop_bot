@@ -141,8 +141,6 @@ class PaymeTransaction(Base):
     amount: Mapped[int] = mapped_column(Integer) # Сумма в тийинах
     order_id: Mapped[int] = mapped_column(ForeignKey("orders.id"), index=True)
     
-    create_time: Mapped[datetime] = mapped_column(default=datetime.utcnow)
-    
     # Состояние транзакции (по документации Payme):
     # 1 - Создана (ожидает подтверждения)
     # 2 - Подтверждена (деньги списаны)
