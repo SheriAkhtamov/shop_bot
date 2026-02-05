@@ -108,11 +108,10 @@ class OrderService:
                 quantity=item.quantity
             ))
             
-            # Only delete from cart immediate if NOT paying by card (Cash/Debt/etc)
-            # For Card, we keep them until payment success (handled in PaymeService)
-            # OR we can delete them but restore if failed? Use Request requirement: "Do Not delete ... until callback"
-            # Always delete from cart to prevent stock race condition
-            await session.delete(item)
+            # Only delete from cart immediately for offline payments (cash/debt/etc).
+            # For online payments (card/click), keep cart items until payment success callback.
+            if order_data.payment_method not in ("card", "click"):
+                await session.delete(item)
         
         await session.commit()
 
