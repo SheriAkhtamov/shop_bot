@@ -1,6 +1,7 @@
-from sqlalchemy import BigInteger, String, ForeignKey, Boolean, Text, Integer, DateTime, func, UniqueConstraint
+from sqlalchemy import BigInteger, String, ForeignKey, Boolean, Text, Integer, DateTime, func, UniqueConstraint, Numeric
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing import List
+from decimal import Decimal
 from datetime import datetime
 from app.database.core import Base
 
@@ -148,8 +149,6 @@ class PaymeTransaction(Base):
     amount: Mapped[int] = mapped_column(Integer) # Сумма в тийинах
     order_id: Mapped[int] = mapped_column(ForeignKey("orders.id"), index=True)
     
-    create_time: Mapped[datetime] = mapped_column(default=datetime.utcnow)
-    
     # Состояние транзакции (по документации Payme):
     # 1 - Создана (ожидает подтверждения)
     # 2 - Подтверждена (деньги списаны)
@@ -174,7 +173,7 @@ class ClickTransaction(Base):
     service_id: Mapped[int] = mapped_column(Integer)
     click_paydoc_id: Mapped[int] = mapped_column(BigInteger)
     merchant_trans_id: Mapped[str] = mapped_column(String, index=True) # Наш ID заказа
-    amount: Mapped[float] = mapped_column(Integer) # Сумма
+    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2)) # Сумма
     action: Mapped[int] = mapped_column(Integer) # 0=Prepare, 1=Complete
     error: Mapped[int] = mapped_column(Integer)
     error_note: Mapped[str] = mapped_column(String, nullable=True)

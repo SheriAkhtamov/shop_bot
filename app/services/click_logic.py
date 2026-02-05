@@ -2,6 +2,7 @@ import hashlib
 import time
 import aiohttp
 import asyncio
+from decimal import Decimal
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -50,7 +51,7 @@ class ClickService:
     async def prepare(self, data: dict):
         """Этап 1: Проверка возможности оплаты"""
         merchant_trans_id = data.get('merchant_trans_id')
-        amount = float(data.get('amount'))
+        amount = Decimal(data.get('amount'))
 
         # 1. Проверка подписи
         if not self.check_sign(**data):
@@ -69,7 +70,7 @@ class ClickService:
             return {"error": ClickErrors.USER_DOES_NOT_EXIST, "error_note": "Order not found"}
 
         # 3. Проверка суммы
-        if abs(order.total_amount - amount) > 0.01: # Сравниваем с погрешностью float
+        if abs(Decimal(order.total_amount) - amount) > Decimal("0.01"):
             return {"error": ClickErrors.INCORRECT_AMOUNT, "error_note": "Incorrect Amount"}
 
         # 4. Проверка статуса (если уже оплачен)
@@ -156,7 +157,7 @@ class ClickService:
     async def complete(self, data: dict):
         """Этап 2: Проведение оплаты"""
         merchant_trans_id = data.get('merchant_trans_id')
-        amount = float(data.get('amount'))
+        amount = Decimal(data.get('amount'))
         click_trans_id = int(data.get('click_trans_id'))
         
         # 1. Проверка подписи
@@ -210,7 +211,7 @@ class ClickService:
             }
 
         # 5. Проводим оплату
-        if abs(order.total_amount - amount) > 0.01:
+        if abs(Decimal(order.total_amount) - amount) > Decimal("0.01"):
             return {"error": ClickErrors.INCORRECT_AMOUNT, "error_note": "Incorrect Amount"}
 
         if order.status == 'new':
