@@ -2,6 +2,7 @@ import os
 import shutil
 import uuid
 import asyncio
+import logging
 from typing import Optional, List
 
 from fastapi import APIRouter, Request, Form, Depends, UploadFile, File, BackgroundTasks
@@ -30,6 +31,7 @@ from app.database.repositories.orders import OrderRepository
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 templates = Jinja2Templates(directory="app/templates")
+logger = logging.getLogger(__name__)
 
 async def get_current_admin(request: Request, session: AsyncSession = Depends(get_db)):
     user_id = request.session.get("user_id")
@@ -625,7 +627,7 @@ async def manager_create(
         session.add(new_manager)
         await session.commit()
     except Exception as e:
-        logger.error(e)
+        logger.exception("Failed to create manager")
         
     return RedirectResponse("/admin/managers", status_code=303)
 
