@@ -245,24 +245,16 @@ async def dashboard(
     )
     top_debtors = (await session.execute(top_debtors_stmt)).scalars().all()
 
-    top_customers_subq = (
-        select(
-            Order.user_id.label("user_id"),
-            func.count(Order.id).label("orders_count"),
-            func.sum(Order.total_amount).label("total_spent")
-        )
-        .where(Order.status.in_(['done', 'paid']))
-        .group_by(Order.user_id)
-        .subquery()
-    )
     top_customers_stmt = (
         select(
             User,
-            top_customers_subq.c.orders_count,
-            top_customers_subq.c.total_spent
+            func.count(Order.id).label("orders_count"),
+            func.sum(Order.total_amount).label("total_spent")
         )
-        .join(top_customers_subq, top_customers_subq.c.user_id == User.id)
-        .order_by(top_customers_subq.c.total_spent.desc())
+        .join(Order, Order.user_id == User.id)
+        .where(Order.status.in_(['done', 'paid']))
+        .group_by(User.id)
+        .order_by(func.sum(Order.total_amount).desc())
         .limit(5)
     )
     top_customers = (await session.execute(top_customers_stmt)).all()
@@ -653,7 +645,6 @@ async def orders_list(
     )
     status_counts_raw = (await session.execute(status_counts_stmt)).all()
     status_counts = {row[0]: row[1] for row in status_counts_raw}
-    total_orders = sum(status_counts.values())
 
     revenue_stmt = select(func.sum(Order.total_amount)).where(Order.status.in_(['done', 'paid']))
     revenue_total = (await session.execute(revenue_stmt)).scalar() or 0
@@ -666,7 +657,6 @@ async def orders_list(
         "total_pages": total_pages,
         "filters": {"q": q, "status": status, "payment": payment, "order_type": order_type},
         "status_counts": status_counts,
-        "total_orders": total_orders,
         "revenue_total": f"{revenue_total:,}".replace(",", " "),
         "csrf_token": generate_csrf_token(request)
     })
