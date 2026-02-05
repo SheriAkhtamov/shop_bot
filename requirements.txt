@@ -1,0 +1,16 @@
+aiogram
+aiofiles
+asyncpg
+python-dotenv
+sqlalchemy
+pydantic-settings
+fastapi
+uvicorn
+jinja2
+python-multipart
+pillow
+loguru
+aiohttp
+itsdangerous
+passlib
+bcrypt==4.0.1

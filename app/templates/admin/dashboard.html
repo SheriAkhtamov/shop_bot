@@ -1,0 +1,196 @@
+{% extends "admin/base.html" %}
+
+{% block header %}Дашборд{% endblock %}
+
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- KPI Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+    <!-- Card 1: Users -->
+    <div class="glass-card rounded-2xl p-6 border-l-4 border-[#6B3F1E]">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-[#EFE6DB] text-[#6B3F1E]">
+                <i class="fas fa-users fa-2x"></i>
+            </div>
+            <div class="ml-4">
+                <p class="mb-2 text-sm font-medium text-gray-600 uppercase">Пользователи</p>
+                <p class="text-3xl font-bold text-[#3E2310]">{{ users_count }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 2: Orders Today -->
+    <div class="glass-card rounded-2xl p-6 border-l-4 border-blue-500">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-blue-100 text-blue-500">
+                <i class="fas fa-shopping-bag fa-2x"></i>
+            </div>
+            <div class="ml-4">
+                <p class="mb-2 text-sm font-medium text-gray-600 uppercase">Заказов сегодня</p>
+                <p class="text-3xl font-bold text-[#3E2310]">{{ orders_today }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 3: Revenue Month -->
+    <div class="glass-card rounded-2xl p-6 border-l-4 border-green-500">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-green-100 text-green-500">
+                <i class="fas fa-money-bill-wave fa-2x"></i>
+            </div>
+            <div class="ml-4">
+                <p class="mb-2 text-sm font-medium text-gray-600 uppercase">Выручка (мес)</p>
+                <p class="text-2xl font-bold text-[#3E2310]">{{ revenue_month }} <span
+                        class="text-sm text-gray-500">сум</span></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 4: Total Debt -->
+    <div class="glass-card rounded-2xl p-6 border-l-4 border-red-500">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-red-100 text-red-500">
+                <i class="fas fa-hand-holding-usd fa-2x"></i>
+            </div>
+            <div class="ml-4">
+                <p class="mb-2 text-sm font-medium text-gray-600 uppercase">Общий долг</p>
+                <p class="text-2xl font-bold text-red-600">{{ total_debt }} <span
+                        class="text-sm text-gray-500">сум</span></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+
+    <!-- Sales Dynamics -->
+    <div class="glass-card rounded-2xl p-6 lg:col-span-2 shadow-coffee bg-white">
+        <h3 class="text-xl font-bold text-[#3E2310] mb-4">📈 Динамика продаж</h3>
+        <div class="relative h-80">
+            <canvas id="salesChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Top Products -->
+    <div class="glass-card rounded-2xl p-6 shadow-coffee bg-white">
+        <h3 class="text-xl font-bold text-[#3E2310] mb-4">🏆 Топ товаров</h3>
+        <div class="relative h-64 flex justify-center">
+            <canvas id="productsChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Payment Methods -->
+    <div class="glass-card rounded-2xl p-6 shadow-coffee bg-white">
+        <h3 class="text-xl font-bold text-[#3E2310] mb-4">💳 Способы оплаты</h3>
+        <div class="relative h-64 flex justify-center">
+            <canvas id="paymentChart"></canvas>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // --- Sales Chart ---
+    const salesCtx = document.getElementById('salesChart').getContext('2d');
+    new Chart(salesCtx, {
+        type: 'line',
+        data: {
+            labels: {{ monthly_labels | tojson }},
+        datasets: [
+        {
+            label: 'Выручка (сум)',
+            data: {{ monthly_rev | tojson }},
+        borderColor: '#6B3F1E',
+        backgroundColor: 'rgba(107, 63, 30, 0.1)',
+        yAxisID: 'y',
+        borderWidth: 2,
+        tension: 0.4,
+        fill: true
+                },
+        {
+            label: 'Кол-во заказов',
+            data: {{ monthly_count | tojson }},
+        borderColor: '#3B82F6',
+        backgroundColor: 'transparent',
+        yAxisID: 'y1',
+        borderWidth: 2,
+        borderDash: [5, 5],
+        tension: 0.4,
+        pointStyle: 'rectRounded'
+                }
+    ]
+        },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+            mode: 'index',
+            intersect: false,
+        },
+        scales: {
+            y: {
+                type: 'linear',
+                display: true,
+                position: 'left',
+                title: { display: true, text: 'Сумма' }
+            },
+            y1: {
+                type: 'linear',
+                display: true,
+                position: 'right',
+                grid: { drawOnChartArea: false },
+                title: { display: true, text: 'Кол-во' }
+            }
+        }
+    }
+    });
+
+    // --- Top Products Chart ---
+    const prodCtx = document.getElementById('productsChart').getContext('2d');
+    new Chart(prodCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ top_prod_labels | tojson }},
+        datasets: [{
+            data: {{ top_prod_data | tojson }},
+        backgroundColor: [
+            '#6B3F1E', '#8B5A2B', '#A67B5B', '#C19A6B', '#DDBEA9'
+        ],
+        hoverOffset: 4
+            }]
+        },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { position: 'right' }
+        }
+    }
+    });
+
+    // --- Payment Methods Chart ---
+    const payCtx = document.getElementById('paymentChart').getContext('2d');
+    new Chart(payCtx, {
+        type: 'pie',
+        data: {
+            labels: {{ pay_labels | tojson }},
+        datasets: [{
+            data: {{ pay_data | tojson }},
+        backgroundColor: [
+            '#10B981', '#F59E0B', '#EF4444' // Green, Yellow, Red
+        ],
+        hoverOffset: 4
+            }]
+        },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { position: 'right' }
+        }
+    }
+    });
+</script>
+{% endblock %}

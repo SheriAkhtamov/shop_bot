@@ -1,0 +1,82 @@
+{% extends "admin/base.html" %}
+
+{% block header %}Заказ #{{ order.id }}{% endblock %}
+
+{% block content %}
+<div class="flex flex-wrap -mx-3">
+    <!-- Левая колонка: Инфо -->
+    <div class="w-full md:w-1/3 px-3 mb-6">
+        <div class="bg-white rounded shadow p-5">
+            <h4 class="text-lg font-bold mb-4 border-b pb-2">📦 Информация</h4>
+            <p class="mb-2"><span class="font-bold">Клиент:</span> {{ order.user.username }}</p>
+            <p class="mb-2"><span class="font-bold">Телефон:</span> <a href="tel:{{ order.contact_phone }}"
+                    class="text-blue-500">{{ order.contact_phone }}</a></p>
+            <p class="mb-2"><span class="font-bold">Способ:</span>
+                {% if order.delivery_method == 'delivery' %}Доставка{% else %}Самовывоз{% endif %}
+            </p>
+            <p class="mb-2"><span class="font-bold">Адрес:</span><br> {{ order.delivery_address }}</p>
+            {% if order.comment %}
+            <p class="mb-2 bg-yellow-100 p-2 rounded text-sm"><span class="font-bold">Комментарий:</span> {{
+                order.comment }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Управление статусом -->
+        <div class="bg-white rounded shadow p-5 mt-4">
+            <h4 class="text-lg font-bold mb-4 border-b pb-2">⚙️ Действия</h4>
+            <form action="/admin/orders/{{ order.id }}/status" method="POST" class="flex flex-col gap-2"><input
+                    type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                {% if order.status == 'new' or order.status == 'paid' %}
+                <button name="status" value="delivery"
+                    class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded w-full">
+                    🚚 Отправить в доставку
+                </button>
+                {% endif %}
+
+                {% if order.status == 'delivery' or order.status == 'new' or order.status == 'paid' %}
+                <button name="status" value="done"
+                    class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded w-full">
+                    ✅ Завершить заказ
+                </button>
+                {% endif %}
+
+
+            </form>
+        </div>
+    </div>
+
+    <!-- Правая колонка: Товары -->
+    <div class="w-full md:w-2/3 px-3 mb-6">
+        <div class="bg-white rounded shadow p-5">
+            <h4 class="text-lg font-bold mb-4 border-b pb-2">🛒 Состав заказа</h4>
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr>
+                        <th class="py-2 px-4 border-b">Товар</th>
+                        <th class="py-2 px-4 border-b text-center">Цена</th>
+                        <th class="py-2 px-4 border-b text-center">Кол-во</th>
+                        <th class="py-2 px-4 border-b text-right">Сумма</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in order.items %}
+                    <tr>
+                        <td class="py-2 px-4 border-b">{{ item.product_name }}</td>
+                        <td class="py-2 px-4 border-b text-center">{{ item.price_at_purchase }}</td>
+                        <td class="py-2 px-4 border-b text-center">{{ item.quantity }}</td>
+                        <td class="py-2 px-4 border-b text-right font-bold">{{ item.price_at_purchase * item.quantity }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3" class="py-4 text-right font-bold text-lg">ИТОГО:</td>
+                        <td class="py-4 text-right font-bold text-lg text-blue-600">{{ order.total_amount }} сум</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

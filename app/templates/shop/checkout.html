@@ -1,0 +1,138 @@
+{% extends "shop/base.html" %}
+
+{% block content %}
+<div
+    class="sticky top-0 bg-[#F2E8DC]/90 backdrop-blur-md z-30 px-5 py-4 border-b border-white/20 flex items-center mb-4">
+    <a href="/shop/cart"
+        class="mr-4 w-10 h-10 bg-white rounded-full flex items-center justify-center text-[#3E2310] shadow-sm active:scale-90 transition">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+    <h1 class="text-xl font-extrabold text-[#3E2310]">Оформление</h1>
+</div>
+
+<form action="/shop/order/create" method="POST" class="px-5 pb-10">
+    {% for item_id in item_ids %}
+    <input type="hidden" name="item_ids" value="{{ item_id }}">
+    {% endfor %}
+
+    <!-- Summary Card -->
+    <div class="bg-white rounded-2xl shadow-coffee p-5 mb-6">
+        <h3 class="font-bold text-[#8C735F] text-xs uppercase tracking-wider mb-2">Ваш заказ</h3>
+        <div class="flex justify-between items-end">
+            <span class="text-3xl font-extrabold text-[#3E2310]">{{ total_amount }}</span>
+            <span class="text-[#8C735F] mb-1.5 font-medium">{{ total_count }} товаров</span>
+        </div>
+    </div>
+
+    <!-- Delivery Method -->
+    <div class="mb-8">
+        <h3 class="font-bold text-[#3E2310] text-lg mb-4">Где заберете?</h3>
+        <div class="grid grid-cols-2 gap-3">
+            <label class="cursor-pointer">
+                <input type="radio" name="delivery_method" value="pickup" class="peer hidden" checked
+                    onchange="toggleDeliveryFields()">
+                <div
+                    class="bg-white border-2 border-transparent peer-checked:border-[#6B3F1E] peer-checked:bg-[#FCF9F5] rounded-xl p-4 text-center transition-all shadow-sm">
+                    <div class="text-2xl mb-1">🏃</div>
+                    <span class="font-bold text-[#3E2310]">Самовывоз</span>
+                </div>
+            </label>
+            <label class="cursor-pointer">
+                <input type="radio" name="delivery_method" value="delivery" class="peer hidden"
+                    onchange="toggleDeliveryFields()">
+                <div
+                    class="bg-white border-2 border-transparent peer-checked:border-[#6B3F1E] peer-checked:bg-[#FCF9F5] rounded-xl p-4 text-center transition-all shadow-sm">
+                    <div class="text-2xl mb-1">🚚</div>
+                    <span class="font-bold text-[#3E2310]">Доставка</span>
+                </div>
+            </label>
+        </div>
+
+        <!-- Branch Address -->
+        <div id="branch-block"
+            class="mt-4 p-4 bg-[#E0CCB7]/30 rounded-xl text-[#3E2310] text-sm flex items-start space-x-3">
+            <i class="fas fa-map-pin mt-1 text-[#6B3F1E]"></i>
+            <div>
+                <span class="font-bold block mb-1">Наш адрес:</span>
+                г. Ташкент, Чиланзарский район, 1-квартал, дом 1.
+            </div>
+        </div>
+
+        <!-- Address Input -->
+        <div id="address-block" class="mt-4 hidden animate-fade-in">
+            <textarea id="address-input" name="address"
+                class="w-full bg-white border border-[#E0CCB7] rounded-xl p-4 text-[#3E2310] placeholder-[#B09B8B] focus:outline-none focus:ring-2 focus:ring-[#6B3F1E] focus:border-transparent transition shadow-inner"
+                rows="3" placeholder="Улица, дом, квартира..."></textarea>
+
+            {% if user.addresses %}
+            <div class="mt-3">
+                <select onchange="document.getElementById('address-input').value = this.value"
+                    class="w-full bg-white border border-[#E0CCB7] rounded-xl p-3 text-sm text-[#3E2310]">
+                    <option value="">📂 Выбрать из сохраненных</option>
+                    {% for addr in user.addresses %}
+                    <option value="{{ addr.address_text }}">{{ addr.address_text }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Contact Info -->
+    <div class="mb-8">
+        <h3 class="font-bold text-[#3E2310] text-lg mb-4">Данные</h3>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-[#8C735F] uppercase mb-1 ml-1">Телефон</label>
+                <input type="tel" name="phone" value="{{ user.phone }}"
+                    class="w-full bg-white border border-[#E0CCB7] rounded-xl p-3.5 text-[#3E2310] font-bold focus:outline-none focus:ring-2 focus:ring-[#6B3F1E]"
+                    required>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-[#8C735F] uppercase mb-1 ml-1">Комментарий</label>
+                <input type="text" name="comment"
+                    class="w-full bg-white border border-[#E0CCB7] rounded-xl p-3.5 text-[#3E2310] focus:outline-none focus:ring-2 focus:ring-[#6B3F1E]"
+                    placeholder="Доп. пожелания">
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment -->
+    <div class="mb-8">
+        <h3 class="font-bold text-[#3E2310] text-lg mb-4">Оплата</h3>
+        <div class="bg-white rounded-xl shadow-coffee overflow-hidden">
+            <label class="flex items-center p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition">
+                <input type="radio" name="payment_method" value="cash"
+                    class="w-5 h-5 text-[#6B3F1E] focus:ring-[#6B3F1E]" checked>
+                <span class="ml-3 font-bold text-[#3E2310]">💵 Наличные</span>
+            </label>
+            <label class="flex items-center p-4 cursor-pointer hover:bg-gray-50 transition">
+                <input type="radio" name="payment_method" value="card"
+                    class="w-5 h-5 text-[#6B3F1E] focus:ring-[#6B3F1E]">
+                <div class="ml-3 flex flex-col">
+                    <span class="font-bold text-[#3E2310]">💳 Онлайн (Payme)</span>
+                    <span class="text-[10px] text-[#8C735F] font-bold uppercase tracking-wide mt-0.5">
+                        Uzcard / Humo
+                    </span>
+                </div>
+            </label>
+            <label class="flex items-center p-4 cursor-pointer hover:bg-gray-50 transition border-t border-gray-100">
+                <input type="radio" name="payment_method" value="click"
+                    class="w-5 h-5 text-[#6B3F1E] focus:ring-[#6B3F1E]">
+                <div class="ml-3 flex flex-col">
+                    <span class="font-bold text-[#3E2310]">🔹 Click</span>
+                    <span class="text-[10px] text-[#8C735F] font-bold uppercase tracking-wide mt-0.5">
+                        Uzcard / Humo
+                    </span>
+                </div>
+            </label>
+        </div>
+    </div>
+
+    <button type="submit"
+        class="w-full bg-[#4A6B36] text-white py-4 rounded-xl font-bold text-lg shadow-xl shadow-[#4A6B36]/30 active:scale-95 transition-transform flex justify-center items-center">
+        <span>Подтвердить заказ</span>
+        <i class="fas fa-check ml-2"></i>
+    </button>
+</form>
+{% endblock %}

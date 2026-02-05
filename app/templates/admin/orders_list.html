@@ -1,0 +1,81 @@
+{% extends "admin/base.html" %}
+
+{% block header %}Список заказов{% endblock %}
+
+{% block content %}
+<div class="bg-white shadow-coffee rounded-2xl overflow-hidden glass-card my-6">
+    <div class="overflow-x-auto">
+        <table class="min-w-full table-auto">
+            <thead>
+                <tr class="bg-[#EFE6DB] text-[#3E2310] uppercase text-sm leading-normal font-bold">
+                    <th class="py-4 px-6 text-left">ID</th>
+                    <th class="py-4 px-6 text-left">Клиент</th>
+                    <th class="py-4 px-6 text-center">Дата</th>
+                    <th class="py-4 px-6 text-center">Сумма</th>
+                    <th class="py-4 px-6 text-center">Статус</th>
+                    <th class="py-4 px-6 text-center">Действия</th>
+                </tr>
+            </thead>
+            <tbody class="text-gray-700 text-sm font-medium">
+                {% for order in orders %}
+                <tr class="border-b border-[#EFE6DB] hover:bg-[#F9F4EF] transition duration-200">
+                    <td class="py-4 px-6 text-left font-bold text-[#6B3F1E]">#{{ order.id }}</td>
+                    <td class="py-4 px-6 text-left">
+                        <div class="font-bold">{{ order.user.username }}</div>
+                        <span class="text-xs text-gray-500">{{ order.contact_phone or order.user.phone }}</span>
+                    </td>
+                    <td class="py-4 px-6 text-center">
+                        {{ order.created_at | datetime_uz }}
+                    </td>
+                    <td class="py-4 px-6 text-center font-bold text-[#3E2310]">
+                        {{ order.total_amount }} сум
+                    </td>
+                    <td class="py-4 px-6 text-center">
+                        {% if order.status == 'new' %}
+                        <span
+                            class="bg-blue-100 text-blue-700 py-1 px-3 rounded-full text-xs font-bold border border-blue-200">Новый</span>
+                        {% elif order.status == 'delivery' %}
+                        <span
+                            class="bg-yellow-100 text-yellow-700 py-1 px-3 rounded-full text-xs font-bold border border-yellow-200">В
+                            пути</span>
+                        {% elif order.status == 'done' %}
+                        <span
+                            class="bg-green-100 text-green-700 py-1 px-3 rounded-full text-xs font-bold border border-green-200">Выполнен</span>
+                        {% elif order.status == 'cancelled' %}
+                        <span
+                            class="bg-red-100 text-red-700 py-1 px-3 rounded-full text-xs font-bold border border-red-200">Отменен</span>
+                        {% else %}
+                        <span class="bg-gray-100 text-gray-700 py-1 px-3 rounded-full text-xs font-bold">{{ order.status
+                            }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="py-4 px-6 text-center">
+                        <a href="/admin/orders/{{ order.id }}"
+                            class="bg-[#F2E8DC] hover:bg-[#D6C0AD] text-[#3E2310] py-2 px-4 rounded-xl text-xs font-bold transition duration-200 inline-flex items-center">
+                            <i class="fas fa-eye mr-2"></i> Подробнее
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Пагинация (если нужна, можно добавить стилизованную) -->
+    {% if total_pages > 1 %}
+    <div class="px-6 py-4 border-t border-[#EFE6DB] flex justify-center">
+        <div class="flex space-x-2">
+            {% if page > 1 %}
+            <a href="?page={{ page - 1 }}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">← Назад</a>
+            {% endif %}
+
+            <span class="px-3 py-1 font-bold">{{ page }} / {{ total_pages }}</span>
+
+            {% if page < total_pages %} <a href="?page={{ page + 1 }}"
+                class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Вперед →</a>
+                {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

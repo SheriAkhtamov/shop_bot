@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Админ-панель{% endblock %}</title>
+    <!-- Подключаем TailwindCSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Manrope -->
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script> <!-- Иконки -->
+    <style>
+        body {
+            font-family: 'Manrope', sans-serif;
+            background-color: #F2E8DC;
+            /* Optional: Add basic noise texture if desired, or keep flat color */
+        }
+
+        .sidebar {
+            background-color: #3E2310;
+        }
+
+        .sidebar-link {
+            color: #D6C0AD;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .sidebar-link:hover {
+            color: #FFFFFF;
+            background-color: #543116;
+        }
+
+        .sidebar-link.active {
+            color: #FFFFFF;
+            background-color: #543116;
+            border-left: 4px solid #6B3F1E;
+        }
+
+        /* Glassmorphism card utility */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 6px -1px rgba(62, 35, 16, 0.1), 0 2px 4px -1px rgba(62, 35, 16, 0.06);
+        }
+    </style>
+</head>
+
+<body class="leading-normal tracking-normal text-gray-900">
+
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <!-- Боковое меню -->
+        <div class="sidebar shadow-2xl h-16 fixed bottom-0 md:relative md:h-auto z-20 w-full md:w-64 flex-shrink-0">
+            <div class="md:fixed md:w-64 md:h-screen md:overflow-y-auto">
+                <div class="p-6 text-center md:text-left hidden md:block">
+                    <h1 class="text-2xl font-extrabold text-[#F2E8DC] tracking-wide">COFFEE ADMIN</h1>
+                </div>
+
+                <ul
+                    class="list-reset flex flex-row md:flex-col py-0 md:py-2 px-1 md:px-0 text-center md:text-left h-full md:h-auto justify-between md:justify-start items-center md:items-stretch">
+                    <li class="flex-1 md:flex-none">
+                        <a href="/admin"
+                            class="sidebar-link block py-3 md:py-4 pl-0 md:pl-6 align-middle no-underline border-b-2 border-transparent md:border-b-0 {% if request.url.path == '/admin' or request.url.path == '/admin/' %}active{% endif %}">
+                            <i class="fas fa-chart-pie pr-0 md:pr-3"></i>
+                            <span class="pb-1 md:pb-0 text-xs md:text-base block md:inline-block">Дашборд</span>
+                        </a>
+                    </li>
+                    <li class="flex-1 md:flex-none">
+                        <a href="/admin/products"
+                            class="sidebar-link block py-3 md:py-4 pl-0 md:pl-6 align-middle no-underline border-b-2 border-transparent md:border-b-0 {% if '/products' in request.url.path %}active{% endif %}">
+                            <i class="fas fa-box pr-0 md:pr-3"></i>
+                            <span class="pb-1 md:pb-0 text-xs md:text-base block md:inline-block">Товары</span>
+                        </a>
+                    </li>
+                    <li class="flex-1 md:flex-none">
+                        <a href="/admin/orders"
+                            class="sidebar-link block py-3 md:py-4 pl-0 md:pl-6 align-middle no-underline border-b-2 border-transparent md:border-b-0 {% if '/orders' in request.url.path %}active{% endif %}">
+                            <i class="fas fa-shopping-cart pr-0 md:pr-3"></i>
+                            <span class="pb-1 md:pb-0 text-xs md:text-base block md:inline-block">Заказы</span>
+                        </a>
+                    </li>
+                    <li class="flex-1 md:flex-none">
+                        <a href="/admin/users"
+                            class="sidebar-link block py-3 md:py-4 pl-0 md:pl-6 align-middle no-underline border-b-2 border-transparent md:border-b-0 {% if '/users' in request.url.path %}active{% endif %}">
+                            <i class="fas fa-users pr-0 md:pr-3"></i>
+                            <span class="pb-1 md:pb-0 text-xs md:text-base block md:inline-block">Клиенты</span>
+                        </a>
+                    </li>
+                    <li class="flex-1 md:flex-none">
+                        <a href="/admin/managers"
+                            class="sidebar-link block py-3 md:py-4 pl-0 md:pl-6 align-middle no-underline border-b-2 border-transparent md:border-b-0 {% if '/managers' in request.url.path %}active{% endif %}">
+                            <i class="fas fa-user-tie pr-0 md:pr-3"></i>
+                            <span class="pb-1 md:pb-0 text-xs md:text-base block md:inline-block">Сотрудники</span>
+                        </a>
+                    </li>
+                    <li class="flex-1 md:flex-none">
+                        <a href="/admin/mailing"
+                            class="sidebar-link block py-3 md:py-4 pl-0 md:pl-6 align-middle no-underline border-b-2 border-transparent md:border-b-0 {% if '/mailing' in request.url.path %}active{% endif %}">
+                            <i class="fas fa-paper-plane pr-0 md:pr-3"></i>
+                            <span class="pb-1 md:pb-0 text-xs md:text-base block md:inline-block">Рассылка</span>
+                        </a>
+                    </li>
+
+                    <div class="md:mt-auto border-t border-[#543116] md:hidden"></div>
+
+                    <li class="flex-1 md:flex-none md:mt-12">
+                        <a href="/admin/logout"
+                            class="sidebar-link block py-3 md:py-4 pl-0 md:pl-6 align-middle no-underline border-b-2 border-transparent md:border-b-0 hover:text-red-400">
+                            <i class="fas fa-sign-out-alt pr-0 md:pr-3"></i>
+                            <span class="pb-1 md:pb-0 text-xs md:text-base block md:inline-block">Выход</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Основной контент -->
+        <div class="main-content flex-1 bg-[#F2E8DC] pb-24 md:pb-8 w-full md:ml-64 relative">
+            <!-- Верхняя полоска (Мобильная) -->
+            <div class="bg-[#3E2310] md:hidden p-4 shadow-lg flex justify-between items-center text-[#F2E8DC]">
+                <h1 class="font-bold text-lg">COFFEE ADMIN</h1>
+            </div>
+
+            <div class="p-6 md:p-10">
+                <div class="mb-8 flex justify-between items-center">
+                    <h3 class="text-3xl font-bold text-[#3E2310]">{% block header %}Панель управления{% endblock %}</h3>
+                </div>
+
+                <div class="rounded-3xl">
+                    {% block content %}{% endblock %}
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

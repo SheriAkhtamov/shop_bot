@@ -1,0 +1,107 @@
+{% extends "shop/base.html" %}
+
+{% block content %}
+<div class="sticky top-0 bg-[#F2E8DC]/90 backdrop-blur-md z-30 px-5 py-4 border-b border-white/20 mb-4">
+    <h1 class="text-xl font-extrabold text-[#3E2310]">Корзина 🛒</h1>
+</div>
+
+<div class="px-5 pb-32">
+    {% if cart_items %}
+    <form action="/shop/checkout" method="GET" id="cart-form">
+        {% for item in cart_items %}
+        <div id="cart-item-{{ item.id }}"
+            class="cart-item-row bg-white rounded-2xl shadow-coffee p-4 mb-4 flex items-center relative transition-transform duration-300 {% if item.unavailable %}opacity-60 bg-gray-50{% endif %}">
+            <!-- Selection Checkbox (Custom Style) -->
+            <div class="mr-4">
+                <input type="checkbox" name="items" value="{{ item.id }}" data-price="{{ item.product.price }}"
+                    class="cart-checkbox appearance-none w-6 h-6 border-2 border-[#E0CCB7] rounded-full checked:bg-[#6B3F1E] checked:border-[#6B3F1E] transition-all cursor-pointer relative after:content-['✓'] after:absolute after:text-white after:text-xs after:top-0.5 after:left-1.5 after:opacity-0 checked:after:opacity-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    {% if not item.unavailable %}checked{% else %}disabled{% endif %}
+                    onchange="calculateTotal(); tg.HapticFeedback.selectionChanged();">
+            </div>
+
+            <!-- Image -->
+            <div class="w-20 h-20 bg-[#F9F9F9] rounded-xl p-2 flex-shrink-0 mr-4 flex items-center justify-center">
+                {% if item.product.image_path %}
+                <img src="{{ item.product.image_path }}" class="w-full h-full object-contain mix-blend-multiply">
+                {% else %}
+                <div class="text-[#D6C0AD] text-2xl">
+                    <i class="fas fa-coffee"></i>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Info -->
+            <div class="flex-1 min-w-0">
+                <h3 class="text-sm font-bold text-[#3E2310] line-clamp-2 leading-tight mb-1">
+                    {{ item.product.name_ru if user.language == 'ru' else item.product.name_uz }}
+                </h3>
+                <p class="text-[#6B3F1E] font-extrabold text-sm">{{ item.product.price }} сум</p>
+                {% if item.unavailable %}
+                <span class="inline-block bg-gray-200 text-gray-500 text-[10px] font-bold px-2 py-0.5 rounded mt-1">НЕТ
+                    В НАЛИЧИИ</span>
+                {% endif %}
+
+                <!-- Quantity Control -->
+                <div class="flex items-center mt-3 bg-[#F2E8DC] rounded-lg w-max px-1 p-0.5">
+                    <button type="button" onclick="updateCartQuantity({{ item.id }}, -1)"
+                        class="w-7 h-7 bg-white rounded-md text-[#6B3F1E] font-bold shadow-sm active:scale-90 transition">-</button>
+                    <span id="qty-{{ item.id }}" class="mx-3 text-sm font-bold text-[#3E2310]">{{ item.quantity
+                        }}</span>
+                    <button type="button" onclick="updateCartQuantity({{ item.id }}, 1)"
+                        class="w-7 h-7 bg-white rounded-md text-[#6B3F1E] font-bold shadow-sm active:scale-90 transition">+</button>
+                </div>
+            </div>
+
+            <!-- Delete -->
+            <button type="button" onclick="removeCartItem({{ item.id }})"
+                class="absolute top-4 right-4 text-[#D6C0AD] hover:text-[#A33B20] transition p-2">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        {% endfor %}
+    </form>
+    {% else %}
+    <div class="text-center py-20">
+        <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-coffee">
+            <span class="text-4xl">🧺</span>
+        </div>
+        <h2 class="text-xl font-bold text-[#3E2310] mb-2">Корзина пуста</h2>
+        <p class="text-[#8C735F] mb-8 px-10 text-sm">Похоже, вы еще не выбрали свой идеальный кофе.</p>
+        <a href="/shop"
+            class="bg-[#6B3F1E] text-white px-8 py-3.5 rounded-xl font-bold shadow-lg shadow-[#6B3F1E]/30 inline-block active:scale-95 transition">
+            Перейти в меню
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Receipt Style Summary -->
+{% if cart_items %}
+<div class="fixed bottom-[80px] w-full px-5 z-30">
+    <div class="bg-white rounded-2xl p-5 shadow-[0_-10px_40px_rgba(107,63,30,0.15)] relative">
+        <!-- Receipt Zig-Zag Top (Pseudo-element or SVG usually, visually simulated here with simple border) -->
+        <div class="flex justify-between items-center mb-4 border-b border-dashed border-[#E0CCB7] pb-4">
+            <span class="text-[#8C735F] font-medium">Итого к оплате</span>
+            <span class="text-2xl font-extrabold text-[#3E2310]"><span id="total-price">0</span> сум</span>
+        </div>
+        <button form="cart-form" id="checkout-btn"
+            class="w-full bg-[#6B3F1E] text-white py-3.5 rounded-xl font-bold text-lg shadow-lg shadow-[#6B3F1E]/20 active:scale-95 transition-all flex justify-center items-center space-x-2">
+            <span>Оформить заказ</span>
+            <i class="fas fa-arrow-right text-sm"></i>
+        </button>
+    </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', calculateTotal);
+
+    // Reliable form submission
+    const checkoutBtn = document.getElementById('checkout-btn');
+    if (checkoutBtn) {
+        checkoutBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.getElementById('cart-form').submit();
+        });
+    }
+</script>
+{% endif %}
+{% endblock %}

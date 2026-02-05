@@ -1,0 +1,42 @@
+{% for product in products %}
+<div class="bg-white rounded-2xl shadow-coffee p-3 relative group active:scale-[0.98] transition-all duration-200">
+    <!-- Like Button -->
+    <button onclick="toggleFavorite(this, {{ product.id }}); event.stopPropagation();"
+        class="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-white/80 backdrop-blur text-[#D6C0AD] hover:text-[#A33B20] hover:bg-[#FFEBE5] transition z-10 shadow-sm">
+        <i class="far fa-heart text-sm"></i>
+    </button>
+
+    <!-- Clickable Area -->
+    <div
+        onclick="openProductModal('{{ product.id }}', '{{ product.name_ru }}', '{{ product.description_ru }}', '{{ product.price }}', '{{ product.image_path }}', '{{ product.stock }}')">
+        <div class="bg-[#F9F9F9] rounded-xl p-3 mb-3 h-32 flex items-center justify-center relative overflow-hidden">
+            {% if product.image_path %}
+                <img src="{{ product.image_path }}" class="w-full h-full object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-110">
+            {% else %}
+                <div class="text-[#D6C0AD] text-4xl opacity-50">
+                    <i class="fas fa-coffee"></i>
+                </div>
+            {% endif %}
+        </div>
+
+        <h3 class="text-[13px] font-bold text-[#3E2310] leading-tight line-clamp-2 h-9 mb-1">
+            {{ product.name_ru if user.language == 'ru' else product.name_uz }}
+        </h3>
+
+        <div class="flex justify-between items-center mt-2">
+            <p class="text-[#6B3F1E] font-extrabold text-sm">{{ product.price }} сум</p>
+
+            <!-- Quick Add Button -->
+            <button onclick="addToCart({{ product.id }}); event.stopPropagation();"
+                class="w-8 h-8 bg-[#6B3F1E] text-white rounded-full flex items-center justify-center shadow-lg shadow-[#6B3F1E]/30 active:scale-90 transition-transform">
+                <i class="fas fa-plus text-xs"></i>
+            </button>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="col-span-2 text-center py-12">
+    <div class="text-4xl mb-3">☕️</div>
+    <p class="text-[#8C735F] font-medium">Пока ничего нет...</p>
+</div>
+{% endfor %}

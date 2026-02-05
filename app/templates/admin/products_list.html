@@ -1,0 +1,74 @@
+{% extends "admin/base.html" %}
+
+{% block header %}Товары{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <a href="/admin/products/new"
+        class="bg-[#6B3F1E] hover:bg-[#543116] text-white font-bold py-3 px-6 rounded-xl shadow-lg transition duration-300 flex inline-flex items-center">
+        <i class="fas fa-plus mr-2"></i> Добавить товар
+    </a>
+</div>
+
+<div class="bg-white shadow-coffee rounded-2xl overflow-hidden glass-card">
+    <div class="overflow-x-auto">
+        <table class="min-w-full table-auto">
+            <thead>
+                <tr class="bg-[#EFE6DB] text-[#3E2310] uppercase text-sm leading-normal font-bold">
+                    <th class="py-4 px-6 text-left first:rounded-tl-2xl">ID</th>
+                    <th class="py-4 px-6 text-center">Фото</th>
+                    <th class="py-4 px-6 text-left">Название (RU)</th>
+                    <th class="py-4 px-6 text-center">Цена</th>
+                    <th class="py-4 px-6 text-center">Остаток</th>
+                    <th class="py-4 px-6 text-center last:rounded-tr-2xl">Действия</th>
+                </tr>
+            </thead>
+            <tbody class="text-gray-700 text-sm font-medium">
+                {% for product in products %}
+                <tr class="border-b border-[#EFE6DB] hover:bg-[#F9F4EF] transition duration-200">
+                    <td class="py-4 px-6 text-left whitespace-nowrap font-bold text-[#6B3F1E]">{{ product.id }}</td>
+                    <td class="py-4 px-6 text-center">
+                        {% if product.image_path %}
+                        <img src="{{ product.image_path }}" class="h-12 w-12 rounded-xl object-cover mx-auto shadow-sm">
+                        {% else %}
+                        <div
+                            class="h-12 w-12 rounded-xl bg-[#EFE6DB] mx-auto flex items-center justify-center text-[#6B3F1E]">
+                            <i class="fas fa-coffee"></i>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td class="py-4 px-6 text-left">{{ product.name_ru }}</td>
+                    <td class="py-4 px-6 text-center font-bold">{{ product.price }} сум</td>
+                    <td class="py-4 px-6 text-center">
+                        {% if product.stock > 0 %}
+                        <span class="bg-green-100 text-green-800 py-1 px-3 rounded-full text-xs font-bold">{{
+                            product.stock }} шт</span>
+                        {% else %}
+                        <span class="bg-red-100 text-red-800 py-1 px-3 rounded-full text-xs font-bold">Нет</span>
+                        {% endif %}
+                    </td>
+                    <td class="py-4 px-6 text-center">
+                        <div class="flex item-center justify-center space-x-4">
+                            <a href="/admin/products/{{ product.id }}/edit"
+                                class="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 hover:bg-blue-600 hover:text-white transition duration-200 shadow-sm"
+                                title="Редактировать">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <form action="/admin/products/delete/{{ product.id }}" method="POST"
+                                onsubmit="return confirm('Вы уверены?');" class="inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <button type="submit"
+                                    class="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center text-red-600 hover:bg-red-600 hover:text-white transition duration-200 shadow-sm"
+                                    title="Удалить">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

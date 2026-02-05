@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="{{ user.language }}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>Shop MiniApp</title>
+
+    <!-- Tailwind CSS (Local) -->
+    <link rel="stylesheet" href="/static/css/style.css?v=1.1">
+
+    <!-- Google Fonts: Manrope -->
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Icons (FontAwesome) -->
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+
+    <!-- Telegram WebApp Script -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <style>
+        :root {
+            --color-primary: #6B3F1E;
+            --color-bg: #F2E8DC;
+            --color-text: #3E2310;
+        }
+
+        body {
+            font-family: 'Manrope', sans-serif;
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            /* Paper Noise Texture */
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+        }
+
+        /* Custom Scrollbar */
+        .hide-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hide-scroll {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Glassmorphism Utilities */
+        .glass-panel {
+            background: rgba(242, 232, 220, 0.85);
+            /* #F2E8DC with opacity */
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        /* Hiding tap highlight on mobile */
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+    </style>
+</head>
+
+<body class="pb-24 select-none touch-pan-y antialiased">
+    <div class="fade-in">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Bottom Navigation Bar (Glassmorphism) -->
+    <div class="fixed bottom-0 w-full glass-panel flex justify-around py-3 z-40 pb-safe shadow-glass">
+
+        <a href="/shop" onclick="tg.HapticFeedback.impactOccurred('light')"
+            class="nav-item flex flex-col items-center group transition duration-200">
+            <div class="p-1.5 rounded-xl group-hover:bg-white/50 transition">
+                <i class="fas fa-home text-xl mb-0.5 text-[#B09B8B] group-[.active]:text-[#6B3F1E]"></i>
+            </div>
+            <!-- Active Dot Indicator -->
+            <span
+                class="w-1 h-1 rounded-full bg-[#6B3F1E] opacity-0 group-[.active]:opacity-100 transition-opacity"></span>
+        </a>
+
+        <a href="/shop#categories" onclick="tg.HapticFeedback.impactOccurred('light')"
+            class="nav-item flex flex-col items-center group transition duration-200">
+            <div class="p-1.5 rounded-xl group-hover:bg-white/50 transition">
+                <i class="fas fa-th-large text-xl mb-0.5 text-[#B09B8B]"></i>
+            </div>
+            <span class="w-1 h-1 rounded-full bg-[#6B3F1E] opacity-0 transition-opacity"></span>
+        </a>
+
+        <a href="/shop/cart" onclick="tg.HapticFeedback.impactOccurred('light')"
+            class="nav-item flex flex-col items-center group transition duration-200 relative">
+            <div class="relative p-1.5 rounded-xl group-hover:bg-white/50 transition">
+                <i class="fas fa-shopping-bag text-xl mb-0.5 text-[#B09B8B] group-[.active]:text-[#6B3F1E]"></i>
+                <span id="cart-badge"
+                    class="hidden absolute top-0 right-0 bg-[#A33B20] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-[#F2E8DC]">0</span>
+            </div>
+            <span
+                class="w-1 h-1 rounded-full bg-[#6B3F1E] opacity-0 group-[.active]:opacity-100 transition-opacity"></span>
+        </a>
+
+        <a href="/shop/profile" onclick="tg.HapticFeedback.impactOccurred('light')"
+            class="nav-item flex flex-col items-center group transition duration-200">
+            <div class="p-1.5 rounded-xl group-hover:bg-white/50 transition">
+                <i class="fas fa-user text-xl mb-0.5 text-[#B09B8B] group-[.active]:text-[#6B3F1E]"></i>
+            </div>
+            <span
+                class="w-1 h-1 rounded-full bg-[#6B3F1E] opacity-0 group-[.active]:opacity-100 transition-opacity"></span>
+        </a>
+    </div>
+
+    <script src="/static/js/main.js?v=1.1"></script>
+    <script>
+        const tgApp = window.Telegram.WebApp;
+        tgApp.ready();
+
+        // Telegram Theme Params Override
+        tgApp.setHeaderColor('#F2E8DC');
+        tgApp.setBackgroundColor('#F2E8DC');
+
+        // Navigation Active State Logic (Simple Client-side Check)
+        const currentPath = window.location.pathname;
+        const navItems = document.querySelectorAll('.nav-item');
+
+        // Simple router logic for active states
+        if (currentPath === '/shop' || currentPath === '/shop/') navItems[0].classList.add('active');
+        // categories hash check is tricky on server render, but we can assume index if not others
+        else if (currentPath.includes('/shop/cart')) navItems[2].classList.add('active');
+        else if (currentPath.includes('/shop/profile')) navItems[3].classList.add('active');
+        // Check hash for categories if needed, but usually it stays on index
+
+    </script>
+</body>
+
+</html>

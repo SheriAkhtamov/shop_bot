@@ -1,0 +1,21 @@
+{% extends "shop/base.html" %}
+
+{% block content %}
+<div class="bg-white sticky top-0 shadow-sm z-30 p-4 mb-2 flex items-center">
+    <a href="/shop/profile" class="mr-4 text-gray-600"><i class="fas fa-arrow-left"></i></a>
+    <h1 class="text-xl font-bold text-gray-800">Избранное ❤️</h1>
+</div>
+
+<div class="px-4 pb-24">
+    {% if products %}
+        <div class="grid grid-cols-2 gap-4">
+            {% include "shop/partials/product_list.html" %}
+        </div>
+    {% else %}
+        <div class="text-center py-10 text-gray-400">
+            <i class="far fa-heart text-4xl mb-2"></i>
+            <p>Вы еще ничего не добавили</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

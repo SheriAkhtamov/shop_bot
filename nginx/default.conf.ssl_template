@@ -1,0 +1,57 @@
+upstream shop_backend {
+    server app:8000;
+}
+
+# Редирект с HTTP на HTTPS
+server {
+    listen 80;
+    server_name unicombot.uz www.unicombot.uz 80.93.62.236;
+    
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://unicombot.uz$request_uri;
+    }
+}
+
+# Основной сервер HTTPS
+server {
+    listen 443 ssl;
+    server_name unicombot.uz www.unicombot.uz;
+
+    ssl_certificate /etc/letsencrypt/live/unicombot.uz/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/unicombot.uz/privkey.pem;
+    
+    # Настройки безопасности SSL
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+
+    # Логирование
+    access_log /var/log/nginx/access.log;
+    error_log /var/log/nginx/error.log;
+
+    # Лимит загрузки файлов (для фото товаров)
+    client_max_body_size 20M;
+
+    location / {
+        proxy_pass http://shop_backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        
+        proxy_read_timeout 60s;
+    }
+
+    location /static/ {
+        alias /app/app/web/static/;
+        expires 7d;
+    }
+
+    location /media/ {
+        alias /app/media/;
+        expires 7d;
+    }
+}

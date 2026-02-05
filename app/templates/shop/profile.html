@@ -1,0 +1,142 @@
+{% extends "shop/base.html" %}
+
+{% block content %}
+<!-- Minimalist Header -->
+<div class="pt-8 pb-6 px-4 text-center relative">
+    <div class="w-24 h-24 bg-white p-1 rounded-full mx-auto mb-4 shadow-coffee relative">
+        <div
+            class="w-full h-full bg-[#F2E8DC] rounded-full flex items-center justify-center text-[#6B3F1E] text-4xl border-4 border-white">
+            <i class="fas fa-user"></i>
+        </div>
+        <a href="/shop/set_lang?lang={% if user.language=='ru' %}uz{% else %}ru{% endif %}"
+            class="absolute bottom-0 right-0 bg-[#3E2310] text-white w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 border-white shadow-md active:scale-90 transition">
+            {{ user.language|upper }}
+        </a>
+    </div>
+    <h2 class="text-2xl font-extrabold text-[#3E2310]">{{ user.username or "Гость" }}</h2>
+    <p class="text-[#8C735F] font-medium">{{ user.phone }}</p>
+</div>
+
+<!-- Debt Block -->
+{% if user.debt and user.debt > 0 %}
+<div class="mx-5 mb-6 bg-red-50 border-2 border-red-200 rounded-2xl p-5 shadow-sm animate-pulse-slow">
+    <div class="flex items-center gap-3 mb-3">
+        <i class="fas fa-exclamation-circle text-red-600 text-2xl"></i>
+        <h3 class="text-red-900 font-bold text-lg">Задолженность</h3>
+    </div>
+    <div class="text-3xl font-extrabold text-[#6B3F1E] mb-4 text-center">
+        {{ user.debt }} <span class="text-sm text-[#8C735F]">сум</span>
+    </div>
+    <p class="text-sm text-red-800 mb-4 leading-tight">
+        Для возможности совершать новые покупки, пожалуйста, погасите долг.
+    </p>
+    <form action="/shop/order/pay_debt" method="POST" id="debtForm">
+        <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">
+                💰
+            </span>
+            <input type="number" name="amount" value="{{ user.debt }}" min="1000" max="{{ user.debt }}"
+                id="debtAmountInput"
+                class="block w-full pl-10 pr-3 py-3 border border-red-300 rounded-xl leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 sm:text-sm font-bold text-gray-900 mb-3"
+                placeholder="Сумма погашения">
+        </div>
+        <button type="submit"
+            class="w-full bg-red-600 text-white font-bold py-3 px-4 rounded-xl shadow hover:bg-red-700 active:scale-95 transition flex items-center justify-center gap-2">
+            <span>Погасить через Payme</span>
+            <i class="fas fa-arrow-right"></i>
+        </button>
+    </form>
+</div>
+{% endif %}
+
+<div class="px-5 pb-32 space-y-6">
+
+    <!-- Menu Grid -->
+    <div class="grid grid-cols-2 gap-4">
+        <div onclick="location.href='/shop/favorites'"
+            class="bg-white p-4 rounded-2xl shadow-coffee active:scale-95 transition cursor-pointer flex flex-col items-center justify-center h-24">
+            <i class="fas fa-heart text-[#A33B20] text-2xl mb-2"></i>
+            <span class="text-xs font-bold text-[#3E2310] uppercase tracking-wide">Избранное</span>
+        </div>
+        <div onclick="location.href='#'"
+            class="bg-white p-4 rounded-2xl shadow-coffee active:scale-95 transition cursor-pointer flex flex-col items-center justify-center h-24 opacity-60">
+            <i class="fas fa-cog text-[#8C735F] text-2xl mb-2"></i>
+            <span class="text-xs font-bold text-[#3E2310] uppercase tracking-wide">Настройки</span>
+        </div>
+    </div>
+
+    <!-- Orders -->
+    <div>
+        <h3 class="font-extrabold text-[#3E2310] text-lg mb-4 ml-1">История заказов</h3>
+
+        {% if orders %}
+        <div class="space-y-4">
+            {% for order in orders %}
+            <div class="bg-white rounded-2xl p-5 shadow-coffee relative overflow-hidden group">
+                <div class="absolute top-0 right-0 p-3 bg-[#F9F9F9] rounded-bl-2xl">
+                    <span class="text-[10px] font-bold uppercase px-2 py-1 rounded 
+                            {% if order.status == 'new' %}text-blue-600 bg-blue-100
+                            {% elif order.status == 'done' %}text-green-600 bg-green-100
+                            {% elif order.status == 'cancelled' %}text-red-600 bg-red-100
+                            {% else %}text-yellow-600 bg-yellow-100{% endif %}">
+
+                        {% if order.status == 'new' %}Обработка
+                        {% elif order.status == 'delivery' %}В пути
+                        {% elif order.status == 'done' %}Завершен
+                        {% else %}Отменен{% endif %}
+                    </span>
+                </div>
+
+                <div class="mb-3">
+                    <span class="text-xs text-[#8C735F] block mb-0.5">Заказ #{{ order.id }}</span>
+                    <div class="font-bold text-[#3E2310] text-lg">{{ order.created_at | datetime_uz('%d.%m.%Y') }}</div>
+                </div>
+
+                <div class="flex justify-between items-end border-t border-dashed border-[#E0CCB7] pt-3 mt-3">
+                    <span class="text-xs font-bold text-[#8C735F] uppercase">{{ order.payment_method }}</span>
+                    <span class="font-extrabold text-[#6B3F1E] text-lg">{{ order.total_amount }} сум</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-8 bg-white/50 rounded-2xl border-2 border-dashed border-[#E0CCB7]">
+            <p class="text-[#8C735F] mb-2 font-medium">История пуста</p>
+            <div class="text-3xl opacity-50">📜</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const debtInput = document.getElementById('debtAmountInput');
+        if (debtInput) {
+            const maxDebt = parseInt(debtInput.getAttribute('max'));
+
+            debtInput.addEventListener('input', (e) => {
+                let val = parseInt(e.target.value);
+                if (val > maxDebt) {
+                    e.target.value = maxDebt;
+                    // Optional: show toast or shake effect
+                }
+            });
+
+            document.getElementById('debtForm').addEventListener('submit', (e) => {
+                let val = parseInt(debtInput.value);
+                if (val > maxDebt) {
+                    e.preventDefault();
+                    debtInput.value = maxDebt;
+                    // Check if showToast is available from main.js
+                    if (typeof showToast === 'function') {
+                        showToast('Сумма не может превышать долг', 'error');
+                    } else {
+                        alert('Сумма не может превышать текущий долг');
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

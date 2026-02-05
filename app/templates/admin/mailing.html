@@ -1,0 +1,30 @@
+{% extends "admin/base.html" %}
+
+{% block header %}Рассылка{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded px-8 pt-6 pb-8 mb-4 max-w-2xl">
+    {% if message %}
+    <div class="bg-green-100 text-green-700 p-3 rounded mb-4">{{ message }}</div>
+    {% endif %}
+
+    <form action="/admin/mailing/send" method="POST" enctype="multipart/form-data"><input type="hidden"
+            name="csrf_token" value="{{ csrf_token }}">
+        <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2">Текст сообщения</label>
+            <textarea name="text" class="border rounded w-full py-2 px-3 text-gray-700 h-32" required
+                placeholder="Введите текст акции..."></textarea>
+        </div>
+
+        <div class="mb-6">
+            <label class="block text-gray-700 text-sm font-bold mb-2">Картинка (опционально)</label>
+            <input name="image" type="file" accept="image/*" class="border rounded w-full py-2 px-3">
+        </div>
+
+        <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center"
+            type="submit">
+            <i class="fas fa-paper-plane mr-2"></i> Начать рассылку
+        </button>
+    </form>
+</div>
+{% endblock %}
