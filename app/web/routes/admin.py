@@ -62,13 +62,15 @@ async def login_submit(
     if not user or not user.password_hash or not verify_password(password, user.password_hash):
         return templates.TemplateResponse("admin/login.html", {
             "request": request, 
-            "error": "Неверный логин или пароль"
+            "error": "Неверный логин или пароль",
+            "csrf_token": generate_csrf_token(request)
         })
     
     if user.role not in ["manager", "superadmin"]:
          return templates.TemplateResponse("admin/login.html", {
             "request": request, 
-            "error": "У вас нет прав доступа"
+            "error": "У вас нет прав доступа",
+            "csrf_token": generate_csrf_token(request)
         })
 
     request.session["user_id"] = user.id
