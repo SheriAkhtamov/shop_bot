@@ -3,11 +3,42 @@
 {% block header %}Товары{% endblock %}
 
 {% block content %}
-<div class="mb-6">
+<div class="mb-6 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
     <a href="/admin/products/new"
-        class="bg-[#6B3F1E] hover:bg-[#543116] text-white font-bold py-3 px-6 rounded-xl shadow-lg transition duration-300 flex inline-flex items-center">
+        class="bg-[#6B3F1E] hover:bg-[#543116] text-white font-bold py-3 px-6 rounded-xl shadow-lg transition duration-300 inline-flex items-center">
         <i class="fas fa-plus mr-2"></i> Добавить товар
     </a>
+    <div class="flex flex-wrap items-center gap-2 text-xs font-bold">
+        <span class="chip bg-[#EFE6DB] text-[#3E2310]">Всего: {{ stats.total }}</span>
+        <span class="chip bg-green-100 text-green-700">Активные: {{ stats.active }}</span>
+        <span class="chip bg-gray-100 text-gray-600">Архив: {{ stats.inactive }}</span>
+        <span class="chip bg-red-100 text-red-600">Низкий остаток: {{ stats.low_stock }}</span>
+    </div>
+</div>
+
+<div class="glass-card rounded-2xl p-4 mb-6">
+    <form method="get" class="flex flex-col xl:flex-row xl:items-center gap-3">
+        <input type="text" name="q" value="{{ filters.q }}" placeholder="Поиск по названию"
+            class="flex-1 bg-white border border-[#E0CCB7] rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6B3F1E]/20">
+        <select name="status"
+            class="bg-white border border-[#E0CCB7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6B3F1E]/20">
+            <option value="active" {% if filters.status == 'active' %}selected{% endif %}>Активные</option>
+            <option value="inactive" {% if filters.status == 'inactive' %}selected{% endif %}>Архив</option>
+            <option value="all" {% if filters.status == 'all' %}selected{% endif %}>Все</option>
+        </select>
+        <select name="stock"
+            class="bg-white border border-[#E0CCB7] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6B3F1E]/20">
+            <option value="all" {% if filters.stock == 'all' %}selected{% endif %}>Все остатки</option>
+            <option value="low" {% if filters.stock == 'low' %}selected{% endif %}>Низкий остаток ≤ 5</option>
+            <option value="out" {% if filters.stock == 'out' %}selected{% endif %}>Нет на складе</option>
+        </select>
+        <button type="submit"
+            class="bg-[#3E2310] text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-[#543116] transition">
+            Применить
+        </button>
+        <a href="/admin/products"
+            class="text-sm font-semibold text-[#6B3F1E] hover:text-[#543116]">Сбросить</a>
+    </form>
 </div>
 
 <div class="bg-white shadow-coffee rounded-2xl overflow-hidden glass-card">
@@ -20,6 +51,7 @@
                     <th class="py-4 px-6 text-left">Название (RU)</th>
                     <th class="py-4 px-6 text-center">Цена</th>
                     <th class="py-4 px-6 text-center">Остаток</th>
+                    <th class="py-4 px-6 text-center">Статус</th>
                     <th class="py-4 px-6 text-center last:rounded-tr-2xl">Действия</th>
                 </tr>
             </thead>
@@ -46,6 +78,22 @@
                         {% else %}
                         <span class="bg-red-100 text-red-800 py-1 px-3 rounded-full text-xs font-bold">Нет</span>
                         {% endif %}
+                        <form action="/admin/products/{{ product.id }}/stock" method="POST" class="mt-2 flex justify-center gap-2">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <input type="number" min="0" name="stock" value="{{ product.stock }}"
+                                class="w-20 border border-[#E0CCB7] rounded-lg px-2 py-1 text-xs text-center">
+                            <button type="submit"
+                                class="px-2 py-1 rounded-lg text-xs font-bold bg-[#3E2310] text-white hover:bg-[#543116]">
+                                Сохранить
+                            </button>
+                        </form>
+                    </td>
+                    <td class="py-4 px-6 text-center">
+                        {% if product.is_active %}
+                        <span class="bg-green-100 text-green-700 py-1 px-3 rounded-full text-xs font-bold">Активен</span>
+                        {% else %}
+                        <span class="bg-gray-100 text-gray-600 py-1 px-3 rounded-full text-xs font-bold">Архив</span>
+                        {% endif %}
                     </td>
                     <td class="py-4 px-6 text-center">
                         <div class="flex item-center justify-center space-x-4">
@@ -54,6 +102,14 @@
                                 title="Редактировать">
                                 <i class="fas fa-edit"></i>
                             </a>
+                            <form action="/admin/products/{{ product.id }}/toggle" method="POST" class="inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <button type="submit"
+                                    class="w-8 h-8 rounded-full bg-[#EFE6DB] flex items-center justify-center text-[#3E2310] hover:bg-[#3E2310] hover:text-white transition duration-200 shadow-sm"
+                                    title="Активировать/Архивировать">
+                                    <i class="fas fa-power-off"></i>
+                                </button>
+                            </form>
                             <form action="/admin/products/delete/{{ product.id }}" method="POST"
                                 onsubmit="return confirm('Вы уверены?');" class="inline">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">

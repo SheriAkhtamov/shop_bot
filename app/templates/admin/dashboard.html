@@ -91,6 +91,127 @@
 
 </div>
 
+<!-- Insights & Actions -->
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-8">
+    <div class="glass-card rounded-2xl p-6 shadow-coffee bg-white xl:col-span-1">
+        <h3 class="text-xl font-bold text-[#3E2310] mb-4">⚡ Быстрые действия</h3>
+        <div class="space-y-3">
+            <a href="/admin/products/new"
+                class="flex items-center justify-between bg-[#6B3F1E] text-white px-4 py-3 rounded-xl font-semibold shadow-lg hover:bg-[#543116] transition">
+                <span>Добавить товар</span>
+                <i class="fas fa-plus"></i>
+            </a>
+            <a href="/admin/orders"
+                class="flex items-center justify-between bg-[#EFE6DB] text-[#3E2310] px-4 py-3 rounded-xl font-semibold hover:bg-[#E5D7C8] transition">
+                <span>Управление заказами</span>
+                <i class="fas fa-box-open"></i>
+            </a>
+            <a href="/admin/mailing"
+                class="flex items-center justify-between bg-[#EFE6DB] text-[#3E2310] px-4 py-3 rounded-xl font-semibold hover:bg-[#E5D7C8] transition">
+                <span>Запустить рассылку</span>
+                <i class="fas fa-paper-plane"></i>
+            </a>
+        </div>
+        <div class="mt-6">
+            <p class="text-xs uppercase text-gray-500 font-bold mb-2">Статусы заказов</p>
+            <div class="space-y-2 text-sm">
+                <div class="flex items-center justify-between bg-[#F9F4EF] rounded-lg px-3 py-2">
+                    <span>Новые</span>
+                    <span class="font-bold text-[#3E2310]">{{ status_counts.get('new', 0) }}</span>
+                </div>
+                <div class="flex items-center justify-between bg-[#F9F4EF] rounded-lg px-3 py-2">
+                    <span>В пути</span>
+                    <span class="font-bold text-[#3E2310]">{{ status_counts.get('delivery', 0) }}</span>
+                </div>
+                <div class="flex items-center justify-between bg-[#F9F4EF] rounded-lg px-3 py-2">
+                    <span>Готово</span>
+                    <span class="font-bold text-[#3E2310]">{{ status_counts.get('done', 0) }}</span>
+                </div>
+                <div class="flex items-center justify-between bg-[#F9F4EF] rounded-lg px-3 py-2">
+                    <span>Оплачено</span>
+                    <span class="font-bold text-[#3E2310]">{{ status_counts.get('paid', 0) }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="glass-card rounded-2xl p-6 shadow-coffee bg-white xl:col-span-2">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold text-[#3E2310]">📦 Низкие остатки</h3>
+            <a href="/admin/products?stock=low"
+                class="text-sm font-semibold text-[#6B3F1E] hover:text-[#543116]">Смотреть все</a>
+        </div>
+        {% if low_stock_products %}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {% for product in low_stock_products %}
+            <div class="flex items-center justify-between bg-[#F9F4EF] rounded-xl p-4">
+                <div>
+                    <p class="font-bold text-[#3E2310]">{{ product.name_ru }}</p>
+                    <p class="text-xs text-gray-500">ID: {{ product.id }}</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-sm font-bold text-red-600">{{ product.stock }} шт</p>
+                    <a href="/admin/products/{{ product.id }}/edit"
+                        class="text-xs text-[#6B3F1E] font-semibold">Обновить</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-sm text-gray-500">Все товары в достаточном количестве.</div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+    <div class="glass-card rounded-2xl p-6 shadow-coffee bg-white">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold text-[#3E2310]">🧾 Последние заказы</h3>
+            <a href="/admin/orders" class="text-sm font-semibold text-[#6B3F1E] hover:text-[#543116]">Все заказы</a>
+        </div>
+        <div class="space-y-3">
+            {% for order in recent_orders %}
+            <div class="flex items-center justify-between bg-[#F9F4EF] rounded-xl px-4 py-3">
+                <div>
+                    <p class="font-bold text-[#3E2310]">#{{ order.id }} · {{ order.user.username }}</p>
+                    <p class="text-xs text-gray-500">{{ order.created_at | datetime_uz }}</p>
+                </div>
+                <div class="text-right">
+                    <p class="font-bold text-[#3E2310]">{{ order.total_amount }} сум</p>
+                    <a href="/admin/orders/{{ order.id }}"
+                        class="text-xs text-[#6B3F1E] font-semibold">Открыть</a>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-sm text-gray-500">Пока нет заказов.</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="glass-card rounded-2xl p-6 shadow-coffee bg-white">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold text-[#3E2310]">💼 Топ должников</h3>
+            <a href="/admin/users" class="text-sm font-semibold text-[#6B3F1E] hover:text-[#543116]">Клиенты</a>
+        </div>
+        <div class="space-y-3">
+            {% for debtor in top_debtors %}
+            <div class="flex items-center justify-between bg-[#F9F4EF] rounded-xl px-4 py-3">
+                <div>
+                    <p class="font-bold text-[#3E2310]">{{ debtor.username or 'Без имени' }}</p>
+                    <p class="text-xs text-gray-500">{{ debtor.phone or 'Телефон не указан' }}</p>
+                </div>
+                <div class="text-right">
+                    <p class="font-bold text-red-600">{{ debtor.debt }} сум</p>
+                    <a href="/admin/users" class="text-xs text-[#6B3F1E] font-semibold">Обновить долг</a>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-sm text-gray-500">Нет клиентов с долгами.</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
 <script>
     // --- Sales Chart ---
     const salesCtx = document.getElementById('salesChart').getContext('2d');
