@@ -123,7 +123,7 @@ async function filterByCategory(catId) {
         if (btn.getAttribute('data-id') === String(catId)) {
             btn.className = "chip-button active";
         } else {
-            btn.className = "chip-button bg-white/70 border border-white/70 text-[#64748b] whitespace-nowrap active:bg-[#4f46e5] active:text-white active:border-[#4f46e5] transition-colors";
+            btn.className = "chip-button";
         }
     });
 

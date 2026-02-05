@@ -110,6 +110,22 @@ async def dashboard(
     )
     revenue_month = (await session.execute(revenue_stmt)).scalar() or 0
 
+    # 3.1 KPI: Average Order Value
+    avg_order_stmt = select(func.avg(Order.total_amount)).where(
+        Order.status.in_(['done', 'paid'])
+    )
+    avg_order_value = (await session.execute(avg_order_stmt)).scalar() or 0
+
+    # 3.2 KPI: Repeat Customers (2+ orders)
+    repeat_customers_stmt = select(func.count()).select_from(
+        select(Order.user_id)
+        .where(Order.status.in_(['done', 'paid']))
+        .group_by(Order.user_id)
+        .having(func.count(Order.id) >= 2)
+        .subquery()
+    )
+    repeat_customers = (await session.execute(repeat_customers_stmt)).scalar() or 0
+
     # 4. KPI: Total Debt
     debt_stmt = select(func.sum(User.debt)).where(User.role == "user", User.debt > 0)
     total_debt = (await session.execute(debt_stmt)).scalar() or 0
@@ -229,6 +245,28 @@ async def dashboard(
     )
     top_debtors = (await session.execute(top_debtors_stmt)).scalars().all()
 
+    top_customers_subq = (
+        select(
+            Order.user_id.label("user_id"),
+            func.count(Order.id).label("orders_count"),
+            func.sum(Order.total_amount).label("total_spent")
+        )
+        .where(Order.status.in_(['done', 'paid']))
+        .group_by(Order.user_id)
+        .subquery()
+    )
+    top_customers_stmt = (
+        select(
+            User,
+            top_customers_subq.c.orders_count,
+            top_customers_subq.c.total_spent
+        )
+        .join(top_customers_subq, top_customers_subq.c.user_id == User.id)
+        .order_by(top_customers_subq.c.total_spent.desc())
+        .limit(5)
+    )
+    top_customers = (await session.execute(top_customers_stmt)).all()
+
     return templates.TemplateResponse("admin/dashboard.html", {
         "request": request,
         "user": user,
@@ -238,6 +276,8 @@ async def dashboard(
         "users_count": users_count,
         "orders_today": orders_today,
         "revenue_month": f"{revenue_month:,}".replace(",", " "), # Format 10 000
+        "avg_order_value": f"{int(avg_order_value):,}".replace(",", " "),
+        "repeat_customers": repeat_customers,
         "total_debt": f"{total_debt:,}".replace(",", " "),
 
         # Charts
@@ -251,7 +291,8 @@ async def dashboard(
         "low_stock_products": low_stock_products,
         "recent_orders": recent_orders,
         "status_counts": status_counts,
-        "top_debtors": top_debtors
+        "top_debtors": top_debtors,
+        "top_customers": top_customers
     })
 
 @router.get("/products", response_class=HTMLResponse)
@@ -272,8 +313,8 @@ async def products_list(
         safe_query = q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
         stmt = stmt.where(
             or_(
-                Product.name_ru.ilike(f"%{safe_query}%"),
-                Product.name_uz.ilike(f"%{safe_query}%")
+                Product.name_ru.ilike(f"%{safe_query}%", escape="\\"),
+                Product.name_uz.ilike(f"%{safe_query}%", escape="\\")
             )
         )
 
@@ -454,17 +495,10 @@ async def product_edit_save(
     product.ikpu = product_data.ikpu
     product.package_code = product_data.package_code
     
+    old_image_path = product.image_path
+    new_image_path = None
+
     if image and image.filename:
-        # Delete old image
-        await delete_file(product.image_path)
-        
-        # Save new image
-        extension = image.filename.split(".")[-1]
-        unique_name = f"{uuid.uuid4()}.{extension}"
-        upload_dir = "media/products"
-        await asyncio.to_thread(os.makedirs, upload_dir, exist_ok=True)
-        file_location = f"{upload_dir}/{unique_name}"
-        
         # Validate Image with PIL
         try:
             file_bytes = await image.read()
@@ -474,18 +508,30 @@ async def product_edit_save(
         except Exception:
             return RedirectResponse(f"/admin/products/{product_id}/edit?error=invalid_image", status_code=303)
 
+        # Save new image
+        extension = image.filename.split(".")[-1]
+        unique_name = f"{uuid.uuid4()}.{extension}"
+        upload_dir = "media/products"
+        await asyncio.to_thread(os.makedirs, upload_dir, exist_ok=True)
+        file_location = f"{upload_dir}/{unique_name}"
+
         async with aiofiles.open(file_location, "wb") as buffer:
             await buffer.write(file_bytes)
             
-        product.image_path = f"/media/products/{unique_name}"
+        new_image_path = f"/media/products/{unique_name}"
+        product.image_path = new_image_path
         
     try:
         await session.commit()
     except Exception as e:
+        await session.rollback()
         # Если загрузили новое изображение, удаляем его при ошибке
-        if image and image.filename and product.image_path:
-            await delete_file(product.image_path)
+        if new_image_path:
+            await delete_file(new_image_path)
         return RedirectResponse(f"/admin/products/{product_id}/edit?error=db_error", status_code=303)
+
+    if new_image_path and old_image_path:
+        await delete_file(old_image_path)
         
     return RedirectResponse("/admin/products", status_code=303)
 
@@ -556,6 +602,10 @@ async def product_delete(
 @router.get("/orders", response_class=HTMLResponse)
 async def orders_list(
     request: Request,
+    q: str = "",
+    status: str = "all",
+    payment: str = "all",
+    order_type: str = "all",
     user: User = Depends(get_current_admin),
     session: AsyncSession = Depends(get_db)
 ):
@@ -569,11 +619,44 @@ async def orders_list(
     limit = 20
     offset = (page - 1) * limit
     
-    order_repo = OrderRepository(session)
-    total_count = await order_repo.count()
-    orders = await order_repo.get_all_detailed(limit=limit, offset=offset)
+    stmt = select(Order).options(selectinload(Order.user))
+    if q:
+        safe_query = q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        search_filters = [
+            User.username.ilike(f"%{safe_query}%", escape="\\"),
+            User.phone.ilike(f"%{safe_query}%", escape="\\"),
+            Order.contact_phone.ilike(f"%{safe_query}%", escape="\\")
+        ]
+        if q.isdigit():
+            search_filters.append(Order.id == int(q))
+        stmt = stmt.join(User).where(or_(*search_filters))
+
+    if status != "all":
+        stmt = stmt.where(Order.status == status)
+    if payment != "all":
+        stmt = stmt.where(Order.payment_method == payment)
+    if order_type != "all":
+        stmt = stmt.where(Order.order_type == order_type)
+
+    total_count_stmt = select(func.count()).select_from(stmt.subquery())
+    total_count = (await session.execute(total_count_stmt)).scalar() or 0
+
+    orders = (await session.execute(
+        stmt.order_by(Order.created_at.desc()).limit(limit).offset(offset)
+    )).scalars().all()
     
     total_pages = (total_count + limit - 1) // limit
+
+    status_counts_stmt = (
+        select(Order.status, func.count(Order.id))
+        .group_by(Order.status)
+    )
+    status_counts_raw = (await session.execute(status_counts_stmt)).all()
+    status_counts = {row[0]: row[1] for row in status_counts_raw}
+    total_orders = sum(status_counts.values())
+
+    revenue_stmt = select(func.sum(Order.total_amount)).where(Order.status.in_(['done', 'paid']))
+    revenue_total = (await session.execute(revenue_stmt)).scalar() or 0
 
     return templates.TemplateResponse("admin/orders_list.html", {
         "request": request, 
@@ -581,6 +664,10 @@ async def orders_list(
         "orders": orders,
         "page": page,
         "total_pages": total_pages,
+        "filters": {"q": q, "status": status, "payment": payment, "order_type": order_type},
+        "status_counts": status_counts,
+        "total_orders": total_orders,
+        "revenue_total": f"{revenue_total:,}".replace(",", " "),
         "csrf_token": generate_csrf_token(request)
     })
 
@@ -646,27 +733,35 @@ async def order_change_status(
 async def users_list(
     request: Request,
     q: str = "",
+    debt: str = "all",
     user: User = Depends(get_current_admin),
     session: AsyncSession = Depends(get_db)
 ):
     if not user: return RedirectResponse("/admin/login")
 
-    # For user search we might need a specific method in repo or just keep raw sql for complex filter
-    # But let's add a search method to UserRepository
-    repo = UserRepository(session)
+    stmt = select(User).where(User.role == "user")
     if q:
-        # We need to implement search in repo, but for now I'll just use the repo's session
-        stmt = select(User).order_by(User.id.desc()).where(or_(User.username.ilike(f"%{q}%"), User.phone.ilike(f"%{q}%")))
-        users = (await session.execute(stmt)).scalars().all()
-    else:
-        # Filter by role='user'
-        stmt = select(User).where(User.role == "user").order_by(User.id.desc())
-        users = (await session.execute(stmt)).scalars().all()
+        safe_query = q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        search_filters = [
+            User.username.ilike(f"%{safe_query}%", escape="\\"),
+            User.phone.ilike(f"%{safe_query}%", escape="\\")
+        ]
+        if q.isdigit():
+            search_filters.append(User.id == int(q))
+        stmt = stmt.where(or_(*search_filters))
+
+    if debt == "with":
+        stmt = stmt.where(User.debt > 0)
+    elif debt == "without":
+        stmt = stmt.where(or_(User.debt == 0, User.debt.is_(None)))
+
+    users = (await session.execute(stmt.order_by(User.id.desc()))).scalars().all()
 
     return templates.TemplateResponse("admin/users_list.html", {
         "request": request,
         "user": user,
         "users": users,
+        "filters": {"q": q, "debt": debt},
         "csrf_token": generate_csrf_token(request)
     })
 
