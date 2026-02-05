@@ -1,5 +1,4 @@
 import os
-import shutil
 import uuid
 import asyncio
 import logging
@@ -9,7 +8,7 @@ from fastapi import APIRouter, Request, Form, Depends, UploadFile, File, Backgro
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select, func, or_
 from sqlalchemy.orm import selectinload
 from aiogram.types import BufferedInputFile
 
@@ -20,10 +19,9 @@ from app.utils.csrf import generate_csrf_token, validate_csrf
 from app.utils.file_manager import delete_file
 
 from app.database.core import get_db
-from app.database.models import User, Category, Order, OrderItem
+from app.database.models import User, Category, Order, OrderItem, Product
 from app.utils.security import verify_password
 from app.bot.loader import bot
-from sqlalchemy import or_, func
 
 from app.database.repositories.users import UserRepository
 from app.database.repositories.products import ProductRepository
@@ -198,6 +196,38 @@ async def dashboard(
     pay_labels = [pay_labels_map.get(row.payment_method, row.payment_method) for row in pay_methods_raw]
     pay_data = [row[1] for row in pay_methods_raw]
 
+    # Quick insights
+    low_stock_stmt = (
+        select(Product)
+        .where(Product.is_active == True, Product.stock <= 5)
+        .order_by(Product.stock.asc())
+        .limit(5)
+    )
+    low_stock_products = (await session.execute(low_stock_stmt)).scalars().all()
+
+    recent_orders_stmt = (
+        select(Order)
+        .options(selectinload(Order.user))
+        .order_by(Order.created_at.desc())
+        .limit(6)
+    )
+    recent_orders = (await session.execute(recent_orders_stmt)).scalars().all()
+
+    status_counts_stmt = (
+        select(Order.status, func.count(Order.id))
+        .where(Order.status != 'cancelled')
+        .group_by(Order.status)
+    )
+    status_counts_raw = (await session.execute(status_counts_stmt)).all()
+    status_counts = {row[0]: row[1] for row in status_counts_raw}
+
+    top_debtors_stmt = (
+        select(User)
+        .where(User.role == "user", User.debt > 0)
+        .order_by(User.debt.desc())
+        .limit(5)
+    )
+    top_debtors = (await session.execute(top_debtors_stmt)).scalars().all()
 
     return templates.TemplateResponse("admin/dashboard.html", {
         "request": request,
@@ -217,24 +247,67 @@ async def dashboard(
         "top_prod_labels": top_prod_labels,
         "top_prod_data": top_prod_data,
         "pay_labels": pay_labels,
-        "pay_data": pay_data
+        "pay_data": pay_data,
+        "low_stock_products": low_stock_products,
+        "recent_orders": recent_orders,
+        "status_counts": status_counts,
+        "top_debtors": top_debtors
     })
 
 @router.get("/products", response_class=HTMLResponse)
 async def products_list(
     request: Request,
+    q: str = "",
+    status: str = "active",
+    stock: str = "all",
     user: User = Depends(get_current_admin),
     session: AsyncSession = Depends(get_db)
 ):
-    if not user: return RedirectResponse("/admin/login")
+    if not user:
+        return RedirectResponse("/admin/login")
 
-    product_repo = ProductRepository(session)
-    products = await product_repo.get_all() # Note: get_all selects all, original had order by id desc
+    stmt = select(Product)
+
+    if q:
+        safe_query = q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        stmt = stmt.where(
+            or_(
+                Product.name_ru.ilike(f"%{safe_query}%"),
+                Product.name_uz.ilike(f"%{safe_query}%")
+            )
+        )
+
+    if status == "active":
+        stmt = stmt.where(Product.is_active == True)
+    elif status == "inactive":
+        stmt = stmt.where(Product.is_active == False)
+
+    if stock == "low":
+        stmt = stmt.where(Product.stock <= 5)
+    elif stock == "out":
+        stmt = stmt.where(Product.stock <= 0)
+
+    stmt = stmt.order_by(Product.id.desc())
+    products = (await session.execute(stmt)).scalars().all()
+
+    total_products = (await session.execute(select(func.count(Product.id)))).scalar() or 0
+    active_count = (await session.execute(select(func.count(Product.id)).where(Product.is_active == True))).scalar() or 0
+    inactive_count = (await session.execute(select(func.count(Product.id)).where(Product.is_active == False))).scalar() or 0
+    low_stock_count = (await session.execute(
+        select(func.count(Product.id)).where(Product.is_active == True, Product.stock <= 5)
+    )).scalar() or 0
 
     return templates.TemplateResponse("admin/products_list.html", {
         "request": request,
         "user": user,
         "products": products,
+        "filters": {"q": q, "status": status, "stock": stock},
+        "stats": {
+            "total": total_products,
+            "active": active_count,
+            "inactive": inactive_count,
+            "low_stock": low_stock_count
+        },
         "csrf_token": generate_csrf_token(request)
     })
 
@@ -414,6 +487,48 @@ async def product_edit_save(
             await delete_file(product.image_path)
         return RedirectResponse(f"/admin/products/{product_id}/edit?error=db_error", status_code=303)
         
+    return RedirectResponse("/admin/products", status_code=303)
+
+@router.post("/products/{product_id}/toggle")
+async def product_toggle_status(
+    product_id: int,
+    user: User = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db),
+    csrf: bool = Depends(validate_csrf)
+):
+    if not user:
+        return RedirectResponse("/admin/login")
+
+    product_repo = ProductRepository(session)
+    product = await product_repo.get_with_lock(product_id)
+
+    if product:
+        product.is_active = not product.is_active
+        await session.commit()
+
+    return RedirectResponse("/admin/products", status_code=303)
+
+@router.post("/products/{product_id}/stock")
+async def product_update_stock(
+    product_id: int,
+    stock: int = Form(...),
+    user: User = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db),
+    csrf: bool = Depends(validate_csrf)
+):
+    if not user:
+        return RedirectResponse("/admin/login")
+
+    if stock < 0:
+        return RedirectResponse("/admin/products?error=invalid_stock", status_code=303)
+
+    product_repo = ProductRepository(session)
+    product = await product_repo.get_with_lock(product_id)
+
+    if product:
+        product.stock = stock
+        await session.commit()
+
     return RedirectResponse("/admin/products", status_code=303)
 
 @router.post("/products/delete/{product_id}")

@@ -22,17 +22,19 @@
 
     <style>
         :root {
-            --color-primary: #6B3F1E;
-            --color-bg: #F2E8DC;
-            --color-text: #3E2310;
+            --color-primary: #4f46e5;
+            --color-secondary: #22d3ee;
+            --color-bg: #f8fafc;
+            --color-text: #0f172a;
+            --color-muted: #64748b;
         }
 
         body {
             font-family: 'Manrope', sans-serif;
-            background-color: var(--color-bg);
+            background: radial-gradient(circle at top left, rgba(79, 70, 229, 0.12), transparent 45%),
+                radial-gradient(circle at 80% 10%, rgba(34, 211, 238, 0.15), transparent 40%),
+                var(--color-bg);
             color: var(--color-text);
-            /* Paper Noise Texture */
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
         }
 
         /* Custom Scrollbar */
@@ -63,16 +65,81 @@
 
         /* Glassmorphism Utilities */
         .glass-panel {
-            background: rgba(242, 232, 220, 0.85);
-            /* #F2E8DC with opacity */
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-top: 1px solid rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.82);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-top: 1px solid rgba(148, 163, 184, 0.2);
         }
 
         /* Hiding tap highlight on mobile */
         * {
             -webkit-tap-highlight-color: transparent;
+        }
+
+        .promo-card {
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.95), rgba(34, 211, 238, 0.9));
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 18px 50px rgba(15, 23, 42, 0.25);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .promo-card::after {
+            content: "";
+            position: absolute;
+            right: -40px;
+            top: -30px;
+            width: 140px;
+            height: 140px;
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 50%;
+        }
+
+        .promo-badge {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            color: #fff;
+            font-weight: 800;
+            padding: 0.45rem 0.8rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            z-index: 1;
+        }
+
+        .info-pill {
+            background: #fff;
+            border-radius: 999px;
+            padding: 0.5rem 0.75rem;
+            box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
+        }
+
+        .shadow-coffee {
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+        }
+
+        .glass-input {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            border-radius: 1rem;
+        }
+
+        .chip-button {
+            padding: 0.6rem 1.2rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            transition: all 0.2s ease;
+        }
+
+        .chip-button.active {
+            background: var(--color-primary);
+            color: #fff;
+            box-shadow: 0 12px 24px rgba(79, 70, 229, 0.3);
         }
     </style>
 </head>
@@ -88,39 +155,39 @@
         <a href="/shop" onclick="tg.HapticFeedback.impactOccurred('light')"
             class="nav-item flex flex-col items-center group transition duration-200">
             <div class="p-1.5 rounded-xl group-hover:bg-white/50 transition">
-                <i class="fas fa-home text-xl mb-0.5 text-[#B09B8B] group-[.active]:text-[#6B3F1E]"></i>
+                <i class="fas fa-home text-xl mb-0.5 text-[#94a3b8] group-[.active]:text-[#4f46e5]"></i>
             </div>
             <!-- Active Dot Indicator -->
             <span
-                class="w-1 h-1 rounded-full bg-[#6B3F1E] opacity-0 group-[.active]:opacity-100 transition-opacity"></span>
+                class="w-1 h-1 rounded-full bg-[#4f46e5] opacity-0 group-[.active]:opacity-100 transition-opacity"></span>
         </a>
 
         <a href="/shop#categories" onclick="tg.HapticFeedback.impactOccurred('light')"
             class="nav-item flex flex-col items-center group transition duration-200">
             <div class="p-1.5 rounded-xl group-hover:bg-white/50 transition">
-                <i class="fas fa-th-large text-xl mb-0.5 text-[#B09B8B]"></i>
+                <i class="fas fa-th-large text-xl mb-0.5 text-[#94a3b8]"></i>
             </div>
-            <span class="w-1 h-1 rounded-full bg-[#6B3F1E] opacity-0 transition-opacity"></span>
+            <span class="w-1 h-1 rounded-full bg-[#4f46e5] opacity-0 transition-opacity"></span>
         </a>
 
         <a href="/shop/cart" onclick="tg.HapticFeedback.impactOccurred('light')"
             class="nav-item flex flex-col items-center group transition duration-200 relative">
             <div class="relative p-1.5 rounded-xl group-hover:bg-white/50 transition">
-                <i class="fas fa-shopping-bag text-xl mb-0.5 text-[#B09B8B] group-[.active]:text-[#6B3F1E]"></i>
+                <i class="fas fa-shopping-bag text-xl mb-0.5 text-[#94a3b8] group-[.active]:text-[#4f46e5]"></i>
                 <span id="cart-badge"
-                    class="hidden absolute top-0 right-0 bg-[#A33B20] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-[#F2E8DC]">0</span>
+                    class="hidden absolute top-0 right-0 bg-[#ef4444] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-white">0</span>
             </div>
             <span
-                class="w-1 h-1 rounded-full bg-[#6B3F1E] opacity-0 group-[.active]:opacity-100 transition-opacity"></span>
+                class="w-1 h-1 rounded-full bg-[#4f46e5] opacity-0 group-[.active]:opacity-100 transition-opacity"></span>
         </a>
 
         <a href="/shop/profile" onclick="tg.HapticFeedback.impactOccurred('light')"
             class="nav-item flex flex-col items-center group transition duration-200">
             <div class="p-1.5 rounded-xl group-hover:bg-white/50 transition">
-                <i class="fas fa-user text-xl mb-0.5 text-[#B09B8B] group-[.active]:text-[#6B3F1E]"></i>
+                <i class="fas fa-user text-xl mb-0.5 text-[#94a3b8] group-[.active]:text-[#4f46e5]"></i>
             </div>
             <span
-                class="w-1 h-1 rounded-full bg-[#6B3F1E] opacity-0 group-[.active]:opacity-100 transition-opacity"></span>
+                class="w-1 h-1 rounded-full bg-[#4f46e5] opacity-0 group-[.active]:opacity-100 transition-opacity"></span>
         </a>
     </div>
 
@@ -130,8 +197,8 @@
         tgApp.ready();
 
         // Telegram Theme Params Override
-        tgApp.setHeaderColor('#F2E8DC');
-        tgApp.setBackgroundColor('#F2E8DC');
+        tgApp.setHeaderColor('#f8fafc');
+        tgApp.setBackgroundColor('#f8fafc');
 
         // Navigation Active State Logic (Simple Client-side Check)
         const currentPath = window.location.pathname;

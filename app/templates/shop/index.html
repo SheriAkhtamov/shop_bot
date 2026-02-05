@@ -2,26 +2,43 @@
 
 {% block content %}
 <!-- Шапка: Поиск и Язык -->
-<div class="sticky top-0 bg-[#F2E8DC]/90 backdrop-blur-md z-30 px-5 py-4 border-b border-white/20">
+<div class="sticky top-0 bg-white/80 backdrop-blur-md z-30 px-5 py-4 border-b border-white/20">
     <div class="flex justify-between items-center mb-4">
         <div>
-            <h1 class="text-2xl font-extrabold text-[#3E2310] tracking-tight">Caffeine.</h1>
-            <p class="text-xs text-[#8C735F] font-medium">Свежесть в каждой детали</p>
+            <h1 class="text-2xl font-extrabold text-[#0f172a] tracking-tight">Caffeine.</h1>
+            <p class="text-xs text-[#64748b] font-medium">Свежесть в каждой детали</p>
         </div>
-        <div class="flex space-x-3 text-sm font-bold bg-white/40 p-1.5 rounded-lg">
+        <div class="flex space-x-3 text-sm font-bold bg-white/60 p-1.5 rounded-lg border border-white/60">
             <!-- Переключатель языка -->
             <a href="/shop/set_lang?lang=ru"
-                class="px-2 rounded-md transition {% if user.language == 'ru' %}bg-[#6B3F1E] text-white shadow-sm{% else %}text-[#8C735F] hover:text-[#6B3F1E]{% endif %}">RU</a>
+                class="px-2 rounded-md transition {% if user.language == 'ru' %}bg-[#4f46e5] text-white shadow-sm{% else %}text-[#64748b] hover:text-[#4f46e5]{% endif %}">RU</a>
             <a href="/shop/set_lang?lang=uz"
-                class="px-2 rounded-md transition {% if user.language == 'uz' %}bg-[#6B3F1E] text-white shadow-sm{% else %}text-[#8C735F] hover:text-[#6B3F1E]{% endif %}">UZ</a>
+                class="px-2 rounded-md transition {% if user.language == 'uz' %}bg-[#4f46e5] text-white shadow-sm{% else %}text-[#64748b] hover:text-[#4f46e5]{% endif %}">UZ</a>
         </div>
     </div>
 
     <div class="relative">
-        <i class="fas fa-search absolute left-4 top-3.5 text-[#8C735F]"></i>
+        <i class="fas fa-search absolute left-4 top-3.5 text-[#94a3b8]"></i>
         <input type="text" oninput="searchProducts(this.value)"
             placeholder="{% if user.language == 'ru' %}Найти кофе...{% else %}Qahva qidirish...{% endif %}"
-            class="w-full bg-white/60 border border-[#E0CCB7] rounded-xl pl-11 pr-4 py-3 text-[#3E2310] placeholder-[#B09B8B] focus:outline-none focus:ring-2 focus:ring-[#6B3F1E]/20 focus:bg-white transition-all shadow-sm">
+            class="w-full glass-input pl-11 pr-4 py-3 text-[#0f172a] placeholder-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/20 focus:bg-white transition-all shadow-sm">
+    </div>
+</div>
+
+<!-- Промо-блок -->
+<div class="mt-6 px-5">
+    <div class="promo-card">
+        <div>
+            <p class="text-xs uppercase tracking-widest text-white/70 font-bold">Новинка недели</p>
+            <h2 class="text-2xl font-extrabold text-white mt-2">Caramel Cloud</h2>
+            <p class="text-sm text-white/80 mt-1">Легкий, мягкий и бархатный вкус.</p>
+        </div>
+        <div class="promo-badge">-15%</div>
+    </div>
+    <div class="mt-4 grid grid-cols-3 gap-2 text-center text-[11px] font-bold text-[#0f172a]">
+        <div class="info-pill">⚡ Быстрая доставка</div>
+        <div class="info-pill">🌿 100% арабика</div>
+        <div class="info-pill">⭐ 4.9/5</div>
     </div>
 </div>
 
@@ -29,13 +46,13 @@
 <div id="categories" class="mt-6 pl-5 scroll-mt-32">
     <div class="flex overflow-x-auto space-x-3 hide-scroll pb-2 pr-5">
         <button
-            class="bg-[#6B3F1E] text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-coffee active:scale-95 transition-transform"
+            class="chip-button active"
             data-id="all" onclick="filterByCategory('all')">
             ☕ Все
         </button>
         {% for cat in categories %}
         <button
-            class="bg-transparent border-2 border-[#E0CCB7] text-[#8C735F] px-5 py-2.5 rounded-full text-sm font-bold whitespace-nowrap active:bg-[#6B3F1E] active:text-white active:border-[#6B3F1E] transition-colors"
+            class="chip-button bg-white/70 border border-white/70 text-[#64748b] whitespace-nowrap active:bg-[#4f46e5] active:text-white active:border-[#4f46e5] transition-colors"
             data-id="{{ cat.id }}" onclick="filterByCategory('{{ cat.id }}')">
             {{ cat.name_ru if user.language == 'ru' else cat.name_uz }}
         </button>
@@ -46,15 +63,17 @@
 <!-- Карусель товаров (Популярное) -->
 <div class="mt-8 px-5">
     <div class="flex justify-between items-end mb-4">
-        <h2 class="text-xl font-extrabold text-[#3E2310]">🔥 Популярное</h2>
-        <span class="text-xs text-[#8C735F] font-semibold tracking-wide uppercase">Top Picks</span>
+        <h2 class="text-xl font-extrabold text-[#0f172a]">🔥 Популярное</h2>
+        <span class="text-xs text-[#64748b] font-semibold tracking-wide uppercase">Top Picks</span>
     </div>
     <div class="flex overflow-x-auto space-x-4 hide-scroll pb-6 -mx-5 px-5">
         {% for product in products[:5] %}
-        <div class="min-w-[160px] bg-white rounded-2xl shadow-coffee p-3 active:scale-95 transition-transform duration-200"
-            onclick="openProductModal('{{ product.id }}', '{{ product.name_ru }}', '{{ product.description_ru }}', '{{ product.price }}', '{{ product.image_path }}', '{{ product.stock }}')">
+        {% set product_name = product.name_ru if user.language == 'ru' else product.name_uz %}
+        {% set product_desc = product.description_ru if user.language == 'ru' else product.description_uz %}
+        <div class="min-w-[160px] bg-white rounded-2xl shadow-coffee p-3 active:scale-95 transition-transform duration-200 border border-white/60"
+            onclick="openProductModal('{{ product.id }}', '{{ product_name | e }}', '{{ product_desc | default('', true) | e }}', '{{ product.price }}', '{{ product.image_path }}', '{{ product.stock }}')">
             <div
-                class="bg-[#F9F9F9] rounded-xl p-2 mb-3 h-32 flex items-center justify-center relative overflow-hidden">
+                class="bg-[#f8fafc] rounded-xl p-2 mb-3 h-32 flex items-center justify-center relative overflow-hidden">
                 {% if product.image_path %}
                 <img src="{{ product.image_path }}" class="w-full h-full object-contain mix-blend-multiply">
                 {% else %}
@@ -63,9 +82,8 @@
                 </div>
                 {% endif %}
             </div>
-            <h3 class="text-sm font-bold text-[#3E2310] truncate">{{ product.name_ru if user.language == 'ru' else
-                product.name_uz }}</h3>
-            <p class="text-[#6B3F1E] font-extrabold text-sm mt-1">{{ product.price }} сум</p>
+            <h3 class="text-sm font-bold text-[#0f172a] truncate">{{ product_name }}</h3>
+            <p class="text-[#4f46e5] font-extrabold text-sm mt-1">{{ product.price }} сум</p>
         </div>
         {% endfor %}
     </div>
@@ -73,7 +91,7 @@
 
 <!-- Сетка всех товаров -->
 <div class="mt-2 px-5 pb-10">
-    <h2 class="text-xl font-extrabold text-[#3E2310] mb-4">Меню</h2>
+    <h2 class="text-xl font-extrabold text-[#0f172a] mb-4">Меню</h2>
     <div id="products-grid" class="grid grid-cols-2 gap-4">
         {% include "shop/partials/product_list.html" %}
     </div>
@@ -100,8 +118,8 @@
             <div class="mb-6">
                 <h2 id="modal-title" class="text-2xl font-extrabold text-[#3E2310] mb-2 leading-tight"></h2>
                 <div class="flex items-center space-x-2 mb-3">
-                    <span id="modal-stock"
-                        class="px-2 py-0.5 bg-[#E6F4EA] text-[#1E8E3E] text-[10px] font-bold uppercase rounded-md tracking-wider">В
+                <span id="modal-stock"
+                        class="px-2 py-0.5 bg-[#dcfce7] text-[#16a34a] text-[10px] font-bold uppercase rounded-md tracking-wider">В
                         наличии</span>
                 </div>
                 <p id="modal-desc" class="text-[#8C735F] text-sm leading-relaxed"></p>
@@ -113,7 +131,7 @@
                     <p id="modal-price" class="text-2xl font-extrabold text-[#6B3F1E]"></p>
                 </div>
                 <button id="modal-add-btn"
-                    class="bg-[#6B3F1E] text-white px-8 py-3.5 rounded-xl font-bold text-sm shadow-lg shadow-[#6B3F1E]/30 active:scale-95 transition-transform flex items-center space-x-2">
+                    class="bg-[#4f46e5] text-white px-8 py-3.5 rounded-xl font-bold text-sm shadow-lg shadow-[#4f46e5]/30 active:scale-95 transition-transform flex items-center space-x-2">
                     <i class="fas fa-shopping-bag"></i>
                     <span>В корзину</span>
                 </button>
@@ -129,7 +147,6 @@
         const sheet = document.getElementById('modal-sheet');
 
         // Fill data
-        // Fill data
         let imgEl = document.getElementById('modal-img');
         if (image) {
             imgEl.src = image;
@@ -138,21 +155,28 @@
             imgEl.src = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxIiBoZWlnaHQ9IjEiPjwvc3ZnPg==";
         }
         document.getElementById('modal-title').innerText = name;
-        document.getElementById('modal-desc').innerText = desc;
+        document.getElementById('modal-desc').innerText = desc || '';
         document.getElementById('modal-price').innerText = price + " сум";
 
         let stockEl = document.getElementById('modal-stock');
+        const addBtn = document.getElementById('modal-add-btn');
         if (stock > 0) {
             stockEl.innerText = "В наличии";
-            stockEl.className = "px-2 py-0.5 bg-[#E6F4EA] text-[#1E8E3E] text-[10px] font-bold uppercase rounded-md tracking-wider";
+            stockEl.className = "px-2 py-0.5 bg-[#dcfce7] text-[#16a34a] text-[10px] font-bold uppercase rounded-md tracking-wider";
+            addBtn.disabled = false;
+            addBtn.classList.remove('opacity-50', 'cursor-not-allowed');
         } else {
             stockEl.innerText = "Нет";
-            stockEl.className = "px-2 py-0.5 bg-red-100 text-red-600 text-[10px] font-bold uppercase rounded-md tracking-wider";
+            stockEl.className = "px-2 py-0.5 bg-rose-100 text-rose-600 text-[10px] font-bold uppercase rounded-md tracking-wider";
+            addBtn.disabled = true;
+            addBtn.classList.add('opacity-50', 'cursor-not-allowed');
         }
 
-        document.getElementById('modal-add-btn').onclick = () => {
-            addToCart(id);
-            closeProductModal();
+        addBtn.onclick = () => {
+            if (stock > 0) {
+                addToCart(id);
+                closeProductModal();
+            }
         };
 
         // Show
@@ -175,10 +199,5 @@
         }, 300); // Wait for transition
     }
 
-    function filterByCategory(catId) {
-        // Implement filtering logic here if needed, or simple redirect
-        // For now just visual fake
-        tg.HapticFeedback.impactOccurred('light');
-    }
 </script>
 {% endblock %}

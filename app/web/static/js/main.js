@@ -121,9 +121,9 @@ async function filterByCategory(catId) {
     const buttons = document.querySelectorAll('#categories button');
     buttons.forEach(btn => {
         if (btn.getAttribute('data-id') === String(catId)) {
-            btn.className = "bg-[#6B3F1E] text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-coffee active:scale-95 transition-transform";
+            btn.className = "chip-button active";
         } else {
-            btn.className = "bg-transparent border-2 border-[#E0CCB7] text-[#8C735F] px-5 py-2.5 rounded-full text-sm font-bold whitespace-nowrap active:bg-[#6B3F1E] active:text-white active:border-[#6B3F1E] transition-colors";
+            btn.className = "chip-button bg-white/70 border border-white/70 text-[#64748b] whitespace-nowrap active:bg-[#4f46e5] active:text-white active:border-[#4f46e5] transition-colors";
         }
     });
 

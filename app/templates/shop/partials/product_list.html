@@ -1,5 +1,7 @@
 {% for product in products %}
-<div class="bg-white rounded-2xl shadow-coffee p-3 relative group active:scale-[0.98] transition-all duration-200">
+{% set product_name = product.name_ru if user.language == 'ru' else product.name_uz %}
+{% set product_desc = product.description_ru if user.language == 'ru' else product.description_uz %}
+<div class="bg-white rounded-2xl shadow-coffee p-3 relative group active:scale-[0.98] transition-all duration-200 border border-white/60">
     <!-- Like Button -->
     <button onclick="toggleFavorite(this, {{ product.id }}); event.stopPropagation();"
         class="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-white/80 backdrop-blur text-[#D6C0AD] hover:text-[#A33B20] hover:bg-[#FFEBE5] transition z-10 shadow-sm">
@@ -8,8 +10,8 @@
 
     <!-- Clickable Area -->
     <div
-        onclick="openProductModal('{{ product.id }}', '{{ product.name_ru }}', '{{ product.description_ru }}', '{{ product.price }}', '{{ product.image_path }}', '{{ product.stock }}')">
-        <div class="bg-[#F9F9F9] rounded-xl p-3 mb-3 h-32 flex items-center justify-center relative overflow-hidden">
+        onclick="openProductModal('{{ product.id }}', '{{ product_name | e }}', '{{ product_desc | default('', true) | e }}', '{{ product.price }}', '{{ product.image_path }}', '{{ product.stock }}')">
+        <div class="bg-[#f8fafc] rounded-xl p-3 mb-3 h-32 flex items-center justify-center relative overflow-hidden">
             {% if product.image_path %}
                 <img src="{{ product.image_path }}" class="w-full h-full object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-110">
             {% else %}
@@ -19,18 +21,22 @@
             {% endif %}
         </div>
 
-        <h3 class="text-[13px] font-bold text-[#3E2310] leading-tight line-clamp-2 h-9 mb-1">
-            {{ product.name_ru if user.language == 'ru' else product.name_uz }}
+        <h3 class="text-[13px] font-bold text-[#0f172a] leading-tight line-clamp-2 h-9 mb-1">
+            {{ product_name }}
         </h3>
 
         <div class="flex justify-between items-center mt-2">
-            <p class="text-[#6B3F1E] font-extrabold text-sm">{{ product.price }} сум</p>
+            <p class="text-[#4f46e5] font-extrabold text-sm">{{ product.price }} сум</p>
 
             <!-- Quick Add Button -->
-            <button onclick="addToCart({{ product.id }}); event.stopPropagation();"
-                class="w-8 h-8 bg-[#6B3F1E] text-white rounded-full flex items-center justify-center shadow-lg shadow-[#6B3F1E]/30 active:scale-90 transition-transform">
-                <i class="fas fa-plus text-xs"></i>
-            </button>
+            {% if product.stock > 0 %}
+                <button onclick="addToCart({{ product.id }}); event.stopPropagation();"
+                    class="w-8 h-8 bg-[#4f46e5] text-white rounded-full flex items-center justify-center shadow-lg shadow-[#4f46e5]/30 active:scale-90 transition-transform">
+                    <i class="fas fa-plus text-xs"></i>
+                </button>
+            {% else %}
+                <span class="text-[10px] font-bold text-rose-500 uppercase">Нет в наличии</span>
+            {% endif %}
         </div>
     </div>
 </div>
