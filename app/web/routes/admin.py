@@ -645,7 +645,6 @@ async def orders_list(
     )
     status_counts_raw = (await session.execute(status_counts_stmt)).all()
     status_counts = {row[0]: row[1] for row in status_counts_raw}
-    total_orders = sum(status_counts.values())
 
     revenue_stmt = select(func.sum(Order.total_amount)).where(Order.status.in_(['done', 'paid']))
     revenue_total = (await session.execute(revenue_stmt)).scalar() or 0
@@ -658,7 +657,6 @@ async def orders_list(
         "total_pages": total_pages,
         "filters": {"q": q, "status": status, "payment": payment, "order_type": order_type},
         "status_counts": status_counts,
-        "total_orders": total_orders,
         "revenue_total": f"{revenue_total:,}".replace(",", " "),
         "csrf_token": generate_csrf_token(request)
     })
