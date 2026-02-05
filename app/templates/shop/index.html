@@ -25,6 +25,23 @@
     </div>
 </div>
 
+<!-- Промо-блок -->
+<div class="mt-6 px-5">
+    <div class="promo-card">
+        <div>
+            <p class="text-xs uppercase tracking-widest text-[#D6C0AD] font-bold">Новинка недели</p>
+            <h2 class="text-2xl font-extrabold text-white mt-2">Caramel Cloud</h2>
+            <p class="text-sm text-white/80 mt-1">Легкий, мягкий и бархатный вкус.</p>
+        </div>
+        <div class="promo-badge">-15%</div>
+    </div>
+    <div class="mt-4 grid grid-cols-3 gap-2 text-center text-[11px] font-bold text-[#3E2310]">
+        <div class="info-pill">⏱ 15-20 мин</div>
+        <div class="info-pill">🌿 100% арабика</div>
+        <div class="info-pill">⭐ 4.9/5</div>
+    </div>
+</div>
+
 <!-- Категории (Горизонтальный скролл) -->
 <div id="categories" class="mt-6 pl-5 scroll-mt-32">
     <div class="flex overflow-x-auto space-x-3 hide-scroll pb-2 pr-5">
@@ -51,8 +68,10 @@
     </div>
     <div class="flex overflow-x-auto space-x-4 hide-scroll pb-6 -mx-5 px-5">
         {% for product in products[:5] %}
+        {% set product_name = product.name_ru if user.language == 'ru' else product.name_uz %}
+        {% set product_desc = product.description_ru if user.language == 'ru' else product.description_uz %}
         <div class="min-w-[160px] bg-white rounded-2xl shadow-coffee p-3 active:scale-95 transition-transform duration-200"
-            onclick="openProductModal('{{ product.id }}', '{{ product.name_ru }}', '{{ product.description_ru }}', '{{ product.price }}', '{{ product.image_path }}', '{{ product.stock }}')">
+            onclick="openProductModal('{{ product.id }}', '{{ product_name | e }}', '{{ product_desc | default('', true) | e }}', '{{ product.price }}', '{{ product.image_path }}', '{{ product.stock }}')">
             <div
                 class="bg-[#F9F9F9] rounded-xl p-2 mb-3 h-32 flex items-center justify-center relative overflow-hidden">
                 {% if product.image_path %}
@@ -63,8 +82,7 @@
                 </div>
                 {% endif %}
             </div>
-            <h3 class="text-sm font-bold text-[#3E2310] truncate">{{ product.name_ru if user.language == 'ru' else
-                product.name_uz }}</h3>
+            <h3 class="text-sm font-bold text-[#3E2310] truncate">{{ product_name }}</h3>
             <p class="text-[#6B3F1E] font-extrabold text-sm mt-1">{{ product.price }} сум</p>
         </div>
         {% endfor %}
@@ -129,7 +147,6 @@
         const sheet = document.getElementById('modal-sheet');
 
         // Fill data
-        // Fill data
         let imgEl = document.getElementById('modal-img');
         if (image) {
             imgEl.src = image;
@@ -138,21 +155,28 @@
             imgEl.src = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxIiBoZWlnaHQ9IjEiPjwvc3ZnPg==";
         }
         document.getElementById('modal-title').innerText = name;
-        document.getElementById('modal-desc').innerText = desc;
+        document.getElementById('modal-desc').innerText = desc || '';
         document.getElementById('modal-price').innerText = price + " сум";
 
         let stockEl = document.getElementById('modal-stock');
+        const addBtn = document.getElementById('modal-add-btn');
         if (stock > 0) {
             stockEl.innerText = "В наличии";
             stockEl.className = "px-2 py-0.5 bg-[#E6F4EA] text-[#1E8E3E] text-[10px] font-bold uppercase rounded-md tracking-wider";
+            addBtn.disabled = false;
+            addBtn.classList.remove('opacity-50', 'cursor-not-allowed');
         } else {
             stockEl.innerText = "Нет";
             stockEl.className = "px-2 py-0.5 bg-red-100 text-red-600 text-[10px] font-bold uppercase rounded-md tracking-wider";
+            addBtn.disabled = true;
+            addBtn.classList.add('opacity-50', 'cursor-not-allowed');
         }
 
-        document.getElementById('modal-add-btn').onclick = () => {
-            addToCart(id);
-            closeProductModal();
+        addBtn.onclick = () => {
+            if (stock > 0) {
+                addToCart(id);
+                closeProductModal();
+            }
         };
 
         // Show
@@ -175,10 +199,5 @@
         }, 300); // Wait for transition
     }
 
-    function filterByCategory(catId) {
-        // Implement filtering logic here if needed, or simple redirect
-        // For now just visual fake
-        tg.HapticFeedback.impactOccurred('light');
-    }
 </script>
 {% endblock %}
