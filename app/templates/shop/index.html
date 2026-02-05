@@ -46,13 +46,13 @@
 <div id="categories" class="mt-6 pl-5 scroll-mt-32">
     <div class="flex overflow-x-auto space-x-3 hide-scroll pb-2 pr-5">
         <button
-            class="bg-[#6B3F1E] text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-coffee active:scale-95 transition-transform"
+            class="chip-button active"
             data-id="all" onclick="filterByCategory('all')">
             ☕ Все
         </button>
         {% for cat in categories %}
         <button
-            class="bg-transparent border-2 border-[#E0CCB7] text-[#8C735F] px-5 py-2.5 rounded-full text-sm font-bold whitespace-nowrap active:bg-[#6B3F1E] active:text-white active:border-[#6B3F1E] transition-colors"
+            class="chip-button"
             data-id="{{ cat.id }}" onclick="filterByCategory('{{ cat.id }}')">
             {{ cat.name_ru if user.language == 'ru' else cat.name_uz }}
         </button>

@@ -8,6 +8,16 @@
         <i class="far fa-heart text-sm"></i>
     </button>
 
+    {% if product.stock <= 5 and product.stock > 0 %}
+    <span class="absolute top-2 left-2 bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-1 rounded-full">
+        Мало
+    </span>
+    {% elif product.stock <= 0 %}
+    <span class="absolute top-2 left-2 bg-red-100 text-red-600 text-[10px] font-bold px-2 py-1 rounded-full">
+        Нет
+    </span>
+    {% endif %}
+
     <!-- Clickable Area -->
     <div
         onclick="openProductModal('{{ product.id }}', '{{ product_name | e }}', '{{ product_desc | default('', true) | e }}', '{{ product.price }}', '{{ product.image_path }}', '{{ product.stock }}')">
@@ -24,9 +34,15 @@
         <h3 class="text-[13px] font-bold text-[#3E2310] leading-tight line-clamp-2 h-9 mb-1">
             {{ product_name }}
         </h3>
+        <p class="text-[10px] text-[#8C735F] line-clamp-2">
+            {{ product_desc or ' ' }}
+        </p>
 
         <div class="flex justify-between items-center mt-2">
-            <p class="text-[#6B3F1E] font-extrabold text-sm">{{ product.price }} сум</p>
+            <div class="flex flex-col">
+                <p class="text-[#6B3F1E] font-extrabold text-sm">{{ product.price }} сум</p>
+                <span class="text-[10px] text-[#B09B8B] font-semibold">За 1 шт</span>
+            </div>
 
             <!-- Quick Add Button -->
             {% if product.stock > 0 %}
