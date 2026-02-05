@@ -126,6 +126,8 @@ class OrderService:
                     await bot.send_message(user.telegram_id, msg, parse_mode="HTML")
             except: pass
             return {"status": "redirect", "url": payme_url}
+        if order_data.payment_method == "click":
+            return {"status": "success", "order_id": new_order.id}
         else:
             try:
                 msg = f"✅ <b>Заказ #{new_order.id} принят!</b>\n💰 {total_amount} сум\n📍 {final_address}\nОплата наличными при получении."
