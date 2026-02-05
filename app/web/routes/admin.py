@@ -784,6 +784,8 @@ async def managers_list(
     user: User = Depends(get_current_admin),
     session: AsyncSession = Depends(get_db)
 ):
+    if not user:
+        return RedirectResponse("/admin/login")
     if user.role != "superadmin":
         return templates.TemplateResponse("admin/error.html", {"request": request, "message": "Доступ запрещен"})
 
@@ -807,6 +809,8 @@ async def manager_create(
     session: AsyncSession = Depends(get_db),
     csrf: bool = Depends(validate_csrf)
 ):
+    if not user:
+        return RedirectResponse("/admin/login")
     if user.role != "superadmin":
         return RedirectResponse("/admin")
     
@@ -843,6 +847,8 @@ async def manager_delete(
     request: Request = None,
     csrf: bool = Depends(validate_csrf)
 ):
+    if not user:
+        return RedirectResponse("/admin/login")
     if user.role != "superadmin":
         return RedirectResponse("/admin")
 
@@ -879,6 +885,8 @@ async def perform_mailing(chat_ids: List[int], text: str, photo_bytes: Optional[
 
 @router.get("/mailing", response_class=HTMLResponse)
 async def mailing_page(request: Request, user: User = Depends(get_current_admin)):
+    if not user:
+        return RedirectResponse("/admin/login")
     if user.role != "superadmin": return RedirectResponse("/admin")
     return templates.TemplateResponse("admin/mailing.html", {"request": request, "user": user, "csrf_token": generate_csrf_token(request)})
 
@@ -892,6 +900,8 @@ async def mailing_send(
     session: AsyncSession = Depends(get_db),
     csrf: bool = Depends(validate_csrf)
 ):
+    if not user:
+        return RedirectResponse("/admin/login")
     if user.role != "superadmin": return RedirectResponse("/admin")
 
     stmt = select(User.telegram_id).where(
