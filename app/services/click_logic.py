@@ -51,7 +51,10 @@ class ClickService:
     async def prepare(self, data: dict):
         """Этап 1: Проверка возможности оплаты"""
         merchant_trans_id = data.get('merchant_trans_id')
-        amount = Decimal(data.get('amount'))
+        try:
+            amount = Decimal(data.get('amount'))
+        except (TypeError, ValueError, ArithmeticError):
+            return {"error": ClickErrors.INCORRECT_AMOUNT, "error_note": "Incorrect Amount"}
 
         # 1. Проверка подписи
         if not self.check_sign(**data):
@@ -60,7 +63,7 @@ class ClickService:
         # 2. Ищем заказ
         try:
             order_id = int(merchant_trans_id)
-        except ValueError:
+        except (TypeError, ValueError):
             return {"error": ClickErrors.USER_DOES_NOT_EXIST, "error_note": "Invalid Order ID"}
 
         stmt = select(Order).where(Order.id == order_id)
@@ -157,8 +160,14 @@ class ClickService:
     async def complete(self, data: dict):
         """Этап 2: Проведение оплаты"""
         merchant_trans_id = data.get('merchant_trans_id')
-        amount = Decimal(data.get('amount'))
-        click_trans_id = int(data.get('click_trans_id'))
+        try:
+            amount = Decimal(data.get('amount'))
+        except (TypeError, ValueError, ArithmeticError):
+            return {"error": ClickErrors.INCORRECT_AMOUNT, "error_note": "Incorrect Amount"}
+        try:
+            click_trans_id = int(data.get('click_trans_id'))
+        except (TypeError, ValueError):
+            return {"error": ClickErrors.ERROR_IN_REQUEST, "error_note": "Invalid click_trans_id"}
         
         # 1. Проверка подписи
         if not self.check_sign(**data):
@@ -167,7 +176,7 @@ class ClickService:
         # 2. Ищем заказ
         try:
             order_id = int(merchant_trans_id)
-        except:
+        except (TypeError, ValueError):
             return {"error": ClickErrors.USER_DOES_NOT_EXIST, "error_note": "Invalid Order ID"}
 
         stmt = select(Order).options(selectinload(Order.user), selectinload(Order.items)).where(Order.id == order_id).with_for_update()

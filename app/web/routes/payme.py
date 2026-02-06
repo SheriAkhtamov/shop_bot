@@ -36,7 +36,7 @@ async def payme_webhook(
     # 1. Читаем тело запроса
     try:
         body = await request.json()
-    except:
+    except Exception:
         return {"jsonrpc": "2.0", "id": None, "error": {"code": PaymeErrors.JSON_PARSE_ERROR, "message": "Invalid JSON"}}
 
     request_id = body.get("id")
