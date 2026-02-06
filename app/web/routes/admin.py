@@ -608,7 +608,8 @@ async def orders_list(
     page = 1
     try:
         page = int(request.query_params.get("page", 1))
-    except: pass
+    except (TypeError, ValueError):
+        logger.debug("Invalid page param in orders list", exc_info=True)
     if page < 1:
         page = 1
     
@@ -717,9 +718,9 @@ async def order_change_status(
         if status_text and order.user.telegram_id:
             try:
                 await bot.send_message(order.user.telegram_id, status_text)
-            except Exception as e:
+            except Exception:
                 # Пользователь мог заблокировать бота — игнорируем
-                pass
+                logger.info("Failed to notify user about order status", exc_info=True)
 
     return RedirectResponse(f"/admin/orders/{order_id}", status_code=303)
 
@@ -890,7 +891,7 @@ async def perform_mailing(chat_ids: List[int], text: str, photo_bytes: Optional[
             await asyncio.sleep(0.05)
         except Exception as e:
             # Пользователь мог заблокировать бота
-            pass
+            logger.info("Failed to send mailing message", exc_info=True)
 
 @router.get("/mailing", response_class=HTMLResponse)
 async def mailing_page(request: Request, user: User = Depends(get_current_admin)):
