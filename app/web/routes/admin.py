@@ -9,7 +9,7 @@ from fastapi import APIRouter, Request, Form, Depends, UploadFile, File, Backgro
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, or_
+from sqlalchemy import select, func, or_, delete
 from sqlalchemy.orm import selectinload
 from aiogram.types import BufferedInputFile
 
@@ -20,7 +20,7 @@ from app.utils.csrf import generate_csrf_token, validate_csrf
 from app.utils.file_manager import delete_file
 
 from app.database.core import get_db
-from app.database.models import User, Category, Order, OrderItem, Product
+from app.database.models import User, Category, Order, OrderItem, Product, CartItem
 from app.utils.security import verify_password
 from app.bot.loader import bot
 
@@ -544,7 +544,12 @@ async def product_toggle_status(
     product = await product_repo.get_with_lock(product_id)
 
     if product:
+        was_active = product.is_active
         product.is_active = not product.is_active
+        if was_active and not product.is_active:
+            await session.execute(
+                delete(CartItem).where(CartItem.product_id == product.id)
+            )
         await session.commit()
 
     return RedirectResponse("/admin/products", status_code=303)
@@ -589,6 +594,9 @@ async def product_delete(
         # Soft Delete: помечаем как архивный вместо удаления
         # Это предотвращает ошибки связей с заказами и корзинами
         product.is_active = False
+        await session.execute(
+            delete(CartItem).where(CartItem.product_id == product.id)
+        )
         # НЕ удаляем файл изображения — товар остается в истории заказов
         await session.commit()
         
