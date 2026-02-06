@@ -1,7 +1,8 @@
 from typing import List, Optional, Dict, Any
 import logging
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update
+from sqlalchemy import select, update, func
+from sqlalchemy.orm import selectinload
 from fastapi import HTTPException
 
 from app.database.models import User, Product, Order, OrderItem, UserAddress, CartItem
@@ -165,3 +166,43 @@ class OrderService:
             except Exception:
                 logger.exception("Failed to send order notification")
             return {"status": "success", "order_id": new_order.id}
+
+    @staticmethod
+    async def cancel_order(session: AsyncSession, order_id: int) -> Optional[Order]:
+        stmt = (
+            select(Order)
+            .options(
+                selectinload(Order.items).selectinload(OrderItem.product),
+                selectinload(Order.user),
+            )
+            .where(Order.id == order_id)
+            .with_for_update()
+        )
+        order = (await session.execute(stmt)).scalar_one_or_none()
+
+        if not order:
+            return None
+
+        if order.status == "cancelled":
+            return order
+
+        if order.order_type == "product":
+            for item in order.items:
+                if item.product_id:
+                    await session.execute(
+                        update(Product)
+                        .where(Product.id == item.product_id)
+                        .values(stock=Product.stock + item.quantity)
+                        .execution_options(synchronize_session="fetch")
+                    )
+
+        if order.order_type == "debt_repayment" and order.status in ("paid", "done"):
+            await session.execute(
+                update(User)
+                .where(User.id == order.user_id)
+                .values(debt=func.coalesce(User.debt, 0) + order.total_amount)
+                .execution_options(synchronize_session="fetch")
+            )
+
+        order.status = "cancelled"
+        return order
