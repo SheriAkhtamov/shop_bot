@@ -80,6 +80,8 @@ class PaymeService:
         transaction = (await self.session.execute(stmt_tx)).scalar_one_or_none()
 
         if transaction:
+            if transaction.amount != amount_tiyins:
+                raise PaymeException(PaymeErrors.INVALID_AMOUNT, {"ru": "Неверная сумма"})
             if transaction.state != 1:
                 raise PaymeException(PaymeErrors.CANT_CANCEL, {"ru": "Транзакция уже обрабатывается"})
             if transaction.order_id != int(order_id):
