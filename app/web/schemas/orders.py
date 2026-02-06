@@ -1,7 +1,7 @@
 import re
 from typing import List, Optional, Literal
 from fastapi import Form, HTTPException
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, ValidationError, validator
 from .base import FormSchema
 
 class OrderCreateSchema(FormSchema):
@@ -52,7 +52,7 @@ class OrderCreateSchema(FormSchema):
                 address=address,
                 comment=comment
             )
-        except ValueError as e:
+        except ValidationError as e:
             # We catch validation errors here to return them nicely or re-raise
             # Since this is used in Depends, raising HTTPException is appropriate
             errors = []
