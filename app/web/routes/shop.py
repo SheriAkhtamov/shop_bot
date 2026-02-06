@@ -49,6 +49,14 @@ async def check_rate_limit(
     await session.commit()
     return False
 
+async def reset_rate_limit(user_id: int, session: AsyncSession) -> None:
+    key = f"order_rate_limit:{user_id}"
+    stmt = select(OrderRateLimit).where(OrderRateLimit.key == key)
+    rate_limit = (await session.execute(stmt)).scalar_one_or_none()
+    if rate_limit:
+        await session.delete(rate_limit)
+        await session.commit()
+
 @router.post("/auth")
 async def auth_user(request: Request, initData: str = Form(...), session: AsyncSession = Depends(get_db)):
     tg_user = check_telegram_auth(initData)
@@ -305,12 +313,17 @@ async def create_order(
                     logger.exception("Failed to send Click order notification")
                 
                 return JSONResponse({"status": "redirect", "url": click_url})
-        
+
+        if result.get("status") != "success":
+            await reset_rate_limit(user.id, session)
+
         return JSONResponse(result)
     except HTTPException as e:
+        await reset_rate_limit(user.id, session)
         return JSONResponse({"status": "error", "message": e.detail}, status_code=e.status_code)
     except Exception:
         logger.exception("Order creation error")
+        await reset_rate_limit(user.id, session)
         return JSONResponse({"status": "error", "message": "Произошла ошибка при создании заказа"}, status_code=500)
 
 @router.post("/order/pay_debt")
