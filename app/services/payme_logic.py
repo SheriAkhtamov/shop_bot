@@ -265,6 +265,18 @@ class PaymeService:
             transaction.state = -1
             transaction.reason = reason
             transaction.cancel_time = datetime.utcnow()
+            stmt_order = select(Order).options(selectinload(Order.items)).where(Order.id == transaction.order_id).with_for_update()
+            order = (await self.session.execute(stmt_order)).scalar_one_or_none()
+
+            if order:
+                if order.order_type == "product":
+                    for item in order.items:
+                        if item.product_id:
+                            product_stmt = select(Product).where(Product.id == item.product_id).with_for_update()
+                            product = (await self.session.execute(product_stmt)).scalar_one_or_none()
+                            if product:
+                                product.stock += item.quantity
+                order.status = "cancelled"
             await self.session.commit()
         
         # Отмена оплаченной транзакции (возврат средств)
