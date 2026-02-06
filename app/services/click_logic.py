@@ -54,6 +54,7 @@ class ClickService:
         merchant_trans_id = data.get('merchant_trans_id')
         try:
             amount = Decimal(data.get('amount'))
+            amount_int = int(amount)
         except (TypeError, ValueError, ArithmeticError):
             return {"error": ClickErrors.INCORRECT_AMOUNT, "error_note": "Incorrect Amount"}
 
@@ -83,7 +84,8 @@ class ClickService:
             return {"error": ClickErrors.USER_DOES_NOT_EXIST, "error_note": "Order not found"}
 
         # 3. Проверка суммы
-        if abs(Decimal(order.total_amount) - amount) > Decimal("0.01"):
+        order_total_int = int(Decimal(order.total_amount))
+        if amount_int != order_total_int:
             return {"error": ClickErrors.INCORRECT_AMOUNT, "error_note": "Incorrect Amount"}
 
         # 4. Проверка статуса (если уже оплачен)
@@ -172,6 +174,7 @@ class ClickService:
         merchant_trans_id = data.get('merchant_trans_id')
         try:
             amount = Decimal(data.get('amount'))
+            amount_int = int(amount)
         except (TypeError, ValueError, ArithmeticError):
             return {"error": ClickErrors.INCORRECT_AMOUNT, "error_note": "Incorrect Amount"}
         try:
@@ -238,7 +241,8 @@ class ClickService:
             }
 
         # 5. Проводим оплату
-        if abs(Decimal(order.total_amount) - amount) > Decimal("0.01"):
+        order_total_int = int(Decimal(order.total_amount))
+        if amount_int != order_total_int:
             return {"error": ClickErrors.INCORRECT_AMOUNT, "error_note": "Incorrect Amount"}
 
         user_locked = None
