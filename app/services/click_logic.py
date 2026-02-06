@@ -56,6 +56,15 @@ class ClickService:
         except (TypeError, ValueError, ArithmeticError):
             return {"error": ClickErrors.INCORRECT_AMOUNT, "error_note": "Incorrect Amount"}
 
+        # 1. Проверка action (должен быть 0 для prepare)
+        try:
+            action = int(data.get('action'))
+        except (TypeError, ValueError):
+            return {"error": ClickErrors.ERROR_IN_REQUEST, "error_note": "Invalid action"}
+
+        if action != 0:
+            return {"error": ClickErrors.ACTION_NOT_FOUND, "error_note": "Action not found"}
+
         # 1. Проверка подписи
         if not self.check_sign(**data):
             return {"error": ClickErrors.SIGN_CHECK_FAILED, "error_note": "Sign check failed"}
@@ -169,11 +178,20 @@ class ClickService:
         except (TypeError, ValueError):
             return {"error": ClickErrors.ERROR_IN_REQUEST, "error_note": "Invalid click_trans_id"}
         
-        # 1. Проверка подписи
+        # 1. Проверка action (должен быть 1 для complete)
+        try:
+            action = int(data.get('action'))
+        except (TypeError, ValueError):
+            return {"error": ClickErrors.ERROR_IN_REQUEST, "error_note": "Invalid action"}
+
+        if action != 1:
+            return {"error": ClickErrors.ACTION_NOT_FOUND, "error_note": "Action not found"}
+
+        # 2. Проверка подписи
         if not self.check_sign(**data):
             return {"error": ClickErrors.SIGN_CHECK_FAILED, "error_note": "Sign check failed"}
         
-        # 2. Ищем заказ
+        # 3. Ищем заказ
         try:
             order_id = int(merchant_trans_id)
         except (TypeError, ValueError):
