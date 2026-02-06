@@ -177,14 +177,13 @@ async def update_cart_qty(item_id: int, qty: int, user: User = Depends(get_shop_
     cart_repo = CartRepository(session)
     item = await cart_repo.get_by_id_and_user(item_id, user.id)
 
-    if not item:
-        return JSONResponse({"success": False, "message": "Cart item not found"}, status_code=400)
-    if not item.product:
-        await session.delete(item)
-        await session.commit()
+    if not item or item.product is None:
+        if item:
+            await session.delete(item)
+            await session.commit()
         return JSONResponse({"success": False, "message": "Product not found"}, status_code=400)
     if not item.product.is_active:
-        return JSONResponse({"success": False, "message": "Product is not available"}, status_code=400)
+        return JSONResponse({"success": False, "message": "Товар недоступен"}, status_code=400)
 
     if item and qty > 0:
         if qty > item.product.stock:
