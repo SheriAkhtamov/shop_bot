@@ -202,14 +202,15 @@ class ClickService:
         # 4. Проверка на отмену (если запрос action=1, но error < 0, значит Click отменяет платеж)
         if int(data.get('error', 0)) < 0:
             # Логика отмены
-            if order.status == 'paid':
+            if order.status in ('new', 'paid'):
                 order.status = 'cancelled'
                 # Возврат стока
                 for item in order.items:
                     if item.product_id:
                         p_stmt = select(Product).where(Product.id == item.product_id).with_for_update()
                         prod = (await self.session.execute(p_stmt)).scalar_one_or_none()
-                        if prod: prod.stock += item.quantity
+                        if prod:
+                            prod.stock += item.quantity
                 await self.session.commit()
             
             return {
