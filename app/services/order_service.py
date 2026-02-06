@@ -24,6 +24,18 @@ class OrderService:
         if user.debt and user.debt > 0:
             raise HTTPException(status_code=403, detail="У вас имеется задолженность. Пожалуйста, погасите её в профиле.")
 
+        # Prevent multiple unpaid online orders
+        pending_online_order_stmt = select(Order).where(
+            Order.user_id == user.id,
+            Order.status == "new",
+            Order.payment_method.in_(("card", "click")),
+        )
+        if (await session.execute(pending_online_order_stmt)).scalar_one_or_none():
+            raise HTTPException(
+                status_code=400,
+                detail="У вас есть неоплаченный заказ — сначала оплатите или отмените его",
+            )
+
         # Address handling
         if order_data.delivery_method == "delivery" and not order_data.address:
             raise HTTPException(status_code=400, detail="Адрес обязателен для доставки")
