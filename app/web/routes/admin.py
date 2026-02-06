@@ -708,28 +708,45 @@ async def order_change_status(
     order_repo = OrderRepository(session)
     online_payment_methods = ("card", "click")
 
+    order = await order_repo.get_with_lock(order_id)
+    if not order:
+        return RedirectResponse("/admin/orders", status_code=303)
+
+    if order.status == "cancelled":
+        error_message = "Отмененный заказ нельзя изменять."
+        return RedirectResponse(
+            f"/admin/orders/{order_id}?error={quote(error_message)}",
+            status_code=303,
+        )
+
+    if order.status in ("paid", "done") and status in ("new", "delivery"):
+        error_message = (
+            "Нельзя переводить оплаченный или завершенный заказ обратно в новый или доставку."
+        )
+        return RedirectResponse(
+            f"/admin/orders/{order_id}?error={quote(error_message)}",
+            status_code=303,
+        )
+
     if status == "cancelled":
         order = await OrderService.cancel_order(session, order_id)
         if order:
             await session.commit()
     else:
-        order = await order_repo.get_with_lock(order_id)
-
-        if order:
-            if (
-                status in ("delivery", "done")
-                and order.payment_method in online_payment_methods
-                and order.status == "new"
-            ):
-                error_message = (
-                    "Онлайн-заказ нельзя отправлять в доставку или завершать до оплаты."
-                )
-                return RedirectResponse(
-                    f"/admin/orders/{order_id}?error={quote(error_message)}",
-                    status_code=303,
-                )
-            order.status = status
-            await session.commit()
+        if (
+            status in ("delivery", "done")
+            and order.payment_method in online_payment_methods
+            and order.status == "new"
+        ):
+            error_message = (
+                "Онлайн-заказ нельзя отправлять в доставку или завершать до оплаты."
+            )
+            return RedirectResponse(
+                f"/admin/orders/{order_id}?error={quote(error_message)}",
+                status_code=303,
+            )
+        order.status = status
+        await session.commit()
         
     if order:
         status_text = {
