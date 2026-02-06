@@ -52,10 +52,6 @@ class OrderCreateSchema(FormSchema):
                 address=address,
                 comment=comment
             )
-        except ValidationError as e:
-            # We catch validation errors here to return them nicely or re-raise
-            # Since this is used in Depends, raising HTTPException is appropriate
-            errors = []
-            for err in e.errors():
-                 errors.append(f"{err['loc'][0]}: {err['msg']}")
+        except ValidationError as exc:
+            errors = [f"{err['loc'][0]}: {err['msg']}" for err in exc.errors()]
             raise HTTPException(status_code=422, detail="; ".join(errors))
