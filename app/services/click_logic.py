@@ -269,7 +269,8 @@ class ClickService:
                 msg = f"✅ <b>Заказ #{order.id} оплачен через Click!</b>\nСумма: {order.total_amount} сум"
                 if order.user.telegram_id:
                     asyncio.create_task(bot.send_message(order.user.telegram_id, msg, parse_mode="HTML"))
-            except: pass
+            except Exception:
+                logger.exception("Failed to send Click payment notification")
 
         return {
             "click_trans_id": click_trans_id,
