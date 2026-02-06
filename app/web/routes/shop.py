@@ -61,12 +61,16 @@ async def auth_user(request: Request, initData: str = Form(...), session: AsyncS
     tg_id = tg_user['id']
     
     user_repo = UserRepository(session)
+    stmt = (
+        insert(User)
+        .values(telegram_id=tg_id, username=tg_user.get('username'), role="user")
+        .on_conflict_do_nothing(index_elements=[User.telegram_id])
+    )
+    await session.execute(stmt)
+    await session.commit()
     user = await user_repo.get_by_telegram_id(tg_id)
-    
     if not user:
-        user = User(telegram_id=tg_id, username=tg_user.get('username'), role="user")
-        user_repo.add(user)
-        await user_repo.commit()
+        raise HTTPException(status_code=500, detail="Failed to load user")
 
     request.session["shop_user_id"] = user.id
     return {"status": "ok"}
