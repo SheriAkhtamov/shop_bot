@@ -138,24 +138,39 @@ class PaymeService:
         self.session.add(new_tx)
         await self.session.commit()
 
+        if order.order_type == "debt_repayment" and not order.items:
+            receipt_items = [
+                {
+                    "title": "Погашение долга",
+                    "price": order.total_amount * 100,  # Tiyans
+                    "count": 1,
+                    "code": "00702001001000001",
+                    "units": 241092,  # piece
+                    "vat_percent": 0,
+                    "package_code": "123456",
+                }
+            ]
+        else:
+            receipt_items = [
+                {
+                    "title": item.product_name,
+                    "price": item.price_at_purchase * 100, # Tiyans
+                    "count": item.quantity,
+                    "code": item.product.ikpu if item.product and item.product.ikpu else "00702001001000001",
+                    "units": 241092, # piece
+                    "vat_percent": 0,
+                    "package_code": item.product.package_code if item.product and item.product.package_code else "123456"
+                }
+                for item in order.items
+            ]
+
         return {
             "create_time": int(new_tx.create_time.timestamp() * 1000),
             "transaction": str(new_tx.id),
             "state": 1,
             "detail": {
                 "receipt_type": 0,
-                "items": [
-                    {
-                        "title": item.product_name,
-                        "price": item.price_at_purchase * 100, # Tiyans
-                        "count": item.quantity,
-                        "code": item.product.ikpu if item.product and item.product.ikpu else "00702001001000001",
-                        "units": 241092, # piece
-                        "vat_percent": 0,
-                        "package_code": item.product.package_code if item.product and item.product.package_code else "123456"
-                    }
-                    for item in order.items
-                ]
+                "items": receipt_items
             }
         }
 
