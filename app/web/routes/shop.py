@@ -324,7 +324,7 @@ async def create_debt_payment(
          return JSONResponse({"status": "error", "message": "У вас нет долгов"}, status_code=400)
          
     if amount <= 0:
-        return JSONResponse({"status": "error", "message": "Неверная сумма"}, status_code=400)
+        raise HTTPException(status_code=400, detail="Сумма заказа должна быть больше нуля")
 
     # Проверка суммы погашения (нельзя оплатить больше, чем долг)
     if user.debt and amount > user.debt:
