@@ -184,6 +184,12 @@ async def update_cart_qty(item_id: int, qty: int, user: User = Depends(get_shop_
             await session.delete(item)
             await session.commit()
         return JSONResponse({"success": False, "message": "Product not found"}, status_code=400)
+    if qty <= 0:
+        await session.delete(item)
+        await session.commit()
+        count_stmt = select(CartItem).where(CartItem.user_id == user.id)
+        items = (await session.execute(count_stmt)).scalars().all()
+        return {"success": True, "total_count": sum(i.quantity for i in items)}
     if not item.product.is_active:
         return JSONResponse({"success": False, "message": "Товар недоступен"}, status_code=400)
 
