@@ -114,6 +114,9 @@ class OrderService:
             total_amount += item.product.price * item.quantity
             items_to_process.append(item)
 
+        if total_amount <= 0:
+            raise HTTPException(status_code=400, detail="Сумма заказа должна быть больше нуля")
+
         # 3. Create Order
         new_order = Order(
             user_id=user.id, 
