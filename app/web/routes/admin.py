@@ -210,8 +210,7 @@ async def dashboard(
     )
     pay_methods_raw = (await session.execute(pay_methods_stmt)).all()
     
-    pay_labels_map = {"card": "Payme", "cash": "Наличные", "debt_repayment": "Погашение долга"}
-    pay_labels = [pay_labels_map.get(row.payment_method, row.payment_method) for row in pay_methods_raw]
+    pay_labels = [row.payment_method for row in pay_methods_raw]
     pay_data = [row[1] for row in pay_methods_raw]
 
     # Quick insights
