@@ -6,9 +6,10 @@ from decimal import Decimal
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from app.database.models import Order, ClickTransaction, User, Product, CartItem
+from app.database.models import Order, ClickTransaction, User, CartItem
 from app.config import settings
 from app.bot.loader import bot
+from app.services.order_service import OrderService
 import logging
 
 logger = logging.getLogger(__name__)
@@ -226,16 +227,8 @@ class ClickService:
         # 4. Проверка на отмену (если запрос action=1, но error < 0, значит Click отменяет платеж)
         if int(data.get('error', 0)) < 0:
             # Логика отмены
-            if order.status in ('new', 'paid'):
-                order.status = 'cancelled'
-                # Возврат стока
-                for item in order.items:
-                    if item.product_id:
-                        p_stmt = select(Product).where(Product.id == item.product_id).with_for_update()
-                        prod = (await self.session.execute(p_stmt)).scalar_one_or_none()
-                        if prod:
-                            prod.stock += item.quantity
-                await self.session.commit()
+            await OrderService.cancel_order(self.session, order.id)
+            await self.session.commit()
             
             return {
                 "click_trans_id": click_trans_id,

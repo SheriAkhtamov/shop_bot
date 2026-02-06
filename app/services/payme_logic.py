@@ -8,6 +8,7 @@ from sqlalchemy.orm import selectinload
 from app.database.models import Order, PaymeTransaction, User, Product, OrderItem
 from app.config import settings
 from app.bot.loader import bot
+from app.services.order_service import OrderService
 
 logger = logging.getLogger(__name__)
 
@@ -280,18 +281,7 @@ class PaymeService:
             transaction.state = -1
             transaction.reason = reason
             transaction.cancel_time = datetime.utcnow()
-            stmt_order = select(Order).options(selectinload(Order.items)).where(Order.id == transaction.order_id).with_for_update()
-            order = (await self.session.execute(stmt_order)).scalar_one_or_none()
-
-            if order:
-                if order.order_type == "product":
-                    for item in order.items:
-                        if item.product_id:
-                            product_stmt = select(Product).where(Product.id == item.product_id).with_for_update()
-                            product = (await self.session.execute(product_stmt)).scalar_one_or_none()
-                            if product:
-                                product.stock += item.quantity
-                order.status = "cancelled"
+            await OrderService.cancel_order(self.session, transaction.order_id)
             await self.session.commit()
         
         # Отмена оплаченной транзакции (возврат средств)
@@ -299,30 +289,7 @@ class PaymeService:
             transaction.state = -2
             transaction.reason = reason
             transaction.cancel_time = datetime.utcnow()
-            
-            stmt_order = select(Order).options(selectinload(Order.items)).where(Order.id == transaction.order_id).with_for_update()
-            order = (await self.session.execute(stmt_order)).scalar_one_or_none()
-            
-            if order:
-                order.status = "cancelled"
-                
-                # ВОЗВРАТ СРЕДСТВ / ТОВАРА
-                if order.order_type == 'product':
-                    # Возвращаем товары на склад
-                    for item in order.items:
-                        if item.product_id:
-                             product_stmt = select(Product).where(Product.id == item.product_id).with_for_update()
-                             product = (await self.session.execute(product_stmt)).scalar_one_or_none()
-                             if product:
-                                 product.stock += item.quantity
-                
-                elif order.order_type == 'debt_repayment':
-                    # Возвращаем долг пользователю
-                    stmt_user = select(User).where(User.id == order.user_id).with_for_update()
-                    user = (await self.session.execute(stmt_user)).scalar_one_or_none()
-                    if user:
-                        user.debt += order.total_amount
-            
+            await OrderService.cancel_order(self.session, transaction.order_id)
             await self.session.commit()
             
         return {

@@ -26,6 +26,7 @@ from app.bot.loader import bot
 from app.database.repositories.users import UserRepository
 from app.database.repositories.products import ProductRepository
 from app.database.repositories.orders import OrderRepository
+from app.services.order_service import OrderService
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 templates = Jinja2Templates(directory="app/templates")
@@ -699,16 +700,20 @@ async def order_change_status(
 ):
     if not user: return RedirectResponse("/admin/login")
 
-    if status == "cancelled":
-        return RedirectResponse(f"/admin/orders/{order_id}", status_code=303)
-
     order_repo = OrderRepository(session)
-    order = await order_repo.get_with_lock(order_id)
-    
-    if order:
-        order.status = status
-        await session.commit()
+
+    if status == "cancelled":
+        order = await OrderService.cancel_order(session, order_id)
+        if order:
+            await session.commit()
+    else:
+        order = await order_repo.get_with_lock(order_id)
+
+        if order:
+            order.status = status
+            await session.commit()
         
+    if order:
         status_text = {
             "delivery": "🚚 Ваш заказ передан курьеру!",
             "done": "✅ Ваш заказ успешно доставлен. Спасибо за покупку!",
