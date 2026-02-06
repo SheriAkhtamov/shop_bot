@@ -763,12 +763,17 @@ async def users_list(
 @router.post("/users/{user_id}/set_debt")
 async def user_set_debt(
     user_id: int,
-    amount: int = Form(...),
+    amount: Optional[int] = Form(None),
     user: User = Depends(get_current_admin),
     session: AsyncSession = Depends(get_db),
     csrf: bool = Depends(validate_csrf)
 ):
     if not user: return RedirectResponse("/admin/login")
+
+    if amount is None:
+        amount = 0
+    if amount < 0:
+        return RedirectResponse("/admin/users?error=invalid_debt", status_code=303)
     
     repo = UserRepository(session)
     target_user = await repo.get_with_lock(user_id)
