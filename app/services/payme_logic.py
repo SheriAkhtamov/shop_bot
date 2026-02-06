@@ -32,7 +32,14 @@ class PaymeService:
     def __init__(self, session: AsyncSession):
         self.session = session
 
+    def _normalize_amount(self, amount_tiyins: int) -> int:
+        try:
+            return int(amount_tiyins)
+        except (TypeError, ValueError):
+            raise PaymeException(PaymeErrors.INVALID_AMOUNT, {"ru": "Неверная сумма"})
+
     async def check_perform_transaction(self, amount_tiyins: int, account: dict):
+        amount_tiyins = self._normalize_amount(amount_tiyins)
         order_id = account.get(settings.PAYME_ACCOUNT_FIELD)
         
         try:
@@ -55,6 +62,7 @@ class PaymeService:
         return {"allow": True}
 
     async def create_transaction(self, payme_id: str, time_ms: int, amount_tiyins: int, account: dict):
+        amount_tiyins = self._normalize_amount(amount_tiyins)
         order_id = account.get(settings.PAYME_ACCOUNT_FIELD)
         
         # Validate time (Payme guidelines: check if transaction is too old or from future)
