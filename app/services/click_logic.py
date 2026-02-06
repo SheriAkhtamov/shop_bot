@@ -241,6 +241,17 @@ class ClickService:
         if abs(Decimal(order.total_amount) - amount) > Decimal("0.01"):
             return {"error": ClickErrors.INCORRECT_AMOUNT, "error_note": "Incorrect Amount"}
 
+        user_locked = None
+        if order.order_type == 'debt_repayment':
+            user_stmt = select(User).where(User.id == order.user_id).with_for_update()
+            user_locked = (await self.session.execute(user_stmt)).scalar_one_or_none()
+            current_debt = user_locked.debt if user_locked and user_locked.debt is not None else 0
+            if Decimal(order.total_amount) > Decimal(current_debt):
+                return {
+                    "error": ClickErrors.INCORRECT_AMOUNT,
+                    "error_note": "Amount exceeds current debt",
+                }
+
         if order.status == 'new':
             order.status = 'paid'
             order.payment_method = 'click'
@@ -279,8 +290,6 @@ class ClickService:
             # Погашение долга
             if order.order_type == 'debt_repayment':
                 order.status = 'done'
-                user_stmt = select(User).where(User.id == order.user_id).with_for_update()
-                user_locked = (await self.session.execute(user_stmt)).scalar_one_or_none()
                 if user_locked:
                     if user_locked.debt < order.total_amount:
                         user_locked.debt = 0 # Безопасное списание

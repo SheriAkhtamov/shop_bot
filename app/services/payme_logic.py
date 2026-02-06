@@ -202,6 +202,17 @@ class PaymeService:
             order = (await self.session.execute(stmt_order)).scalar_one_or_none()
             
             if order:
+                user_locked = None
+                if order.order_type == "debt_repayment":
+                    stmt_user = select(User).where(User.id == order.user_id).with_for_update()
+                    user_locked = (await self.session.execute(stmt_user)).scalar_one_or_none()
+                    current_debt = user_locked.debt if user_locked and user_locked.debt is not None else 0
+                    if order.total_amount > current_debt:
+                        raise PaymeException(
+                            PaymeErrors.INVALID_AMOUNT,
+                            {"ru": "Сумма превышает текущий долг"},
+                        )
+
                 order.status = "paid"
                 order.payment_method = "card"
 
@@ -240,19 +251,15 @@ class PaymeService:
                  # ЛОГИКА ПОГАШЕНИЯ ДОЛГА
                 if order.order_type == "debt_repayment":
                      order.status = "done" # Сразу завершен
-                     
-                     # Явная блокировка пользователя для обновления баланса
-                     stmt_user = select(User).where(User.id == order.user_id).with_for_update()
-                     user_locked = (await self.session.execute(stmt_user)).scalar_one_or_none()
-                     
+
                      paid_amount = order.total_amount
-                     
+
                      if user_locked:
                          if user_locked.debt < paid_amount:
                              user_locked.debt = 0
                          else:
                              user_locked.debt -= paid_amount
-                     
+
                      # Уведомление
                      try:
                          msg = f"✅ <b>Долг погашен на {paid_amount} сум!</b>\nОстаток долга: {user_locked.debt if user_locked else 0} сум."
