@@ -27,8 +27,9 @@ class OrderService:
         # Address handling
         if order_data.delivery_method == "delivery" and not order_data.address:
             raise HTTPException(status_code=400, detail="Адрес обязателен для доставки")
-        final_address = "Самовывоз: Чиланзар, 1"
-        if order_data.delivery_method == "delivery" and order_data.address:
+        if order_data.delivery_method == "pickup":
+            final_address = "Самовывоз: Чиланзар, 1"
+        else:
             final_address = order_data.address
             # Update/Save address if new
             stmt = select(UserAddress).where(UserAddress.user_id == user.id, UserAddress.address_text == order_data.address)
