@@ -205,20 +205,37 @@ class PaymeService:
                 order.status = "paid"
                 order.payment_method = "card"
 
-                # Clear Cart for this user (products purchased in this order)
-                # We iterate order items and remove corresponding cart items
-                from sqlalchemy import delete
+                # Reduce cart quantities only for items included in this order.
+                # This avoids wiping out newer cart additions made after order creation.
+                from collections import defaultdict
                 from app.database.models import CartItem
-                
-                # Get product IDs from order
-                product_ids = [item.product_id for item in order.items if item.product_id]
-                
-                if product_ids:
-                    stmt_del = delete(CartItem).where(
-                        CartItem.user_id == order.user_id,
-                        CartItem.product_id.in_(product_ids)
+
+                ordered_quantities = defaultdict(int)
+                for item in order.items:
+                    if item.product_id:
+                        ordered_quantities[item.product_id] += item.quantity
+
+                if ordered_quantities:
+                    cart_stmt = (
+                        select(CartItem)
+                        .where(
+                            CartItem.user_id == order.user_id,
+                            CartItem.product_id.in_(ordered_quantities.keys()),
+                        )
+                        .order_by(CartItem.id)
+                        .with_for_update()
                     )
-                    await self.session.execute(stmt_del)
+                    cart_items = (await self.session.execute(cart_stmt)).scalars().all()
+                    for cart_item in cart_items:
+                        remaining = ordered_quantities.get(cart_item.product_id, 0)
+                        if remaining <= 0:
+                            continue
+                        if cart_item.quantity > remaining:
+                            cart_item.quantity -= remaining
+                            ordered_quantities[cart_item.product_id] = 0
+                        else:
+                            ordered_quantities[cart_item.product_id] = remaining - cart_item.quantity
+                            await self.session.delete(cart_item)
 
                  # ЛОГИКА ПОГАШЕНИЯ ДОЛГА
                 if order.order_type == "debt_repayment":
