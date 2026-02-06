@@ -1,4 +1,5 @@
 from typing import List, Optional, Dict, Any
+import logging
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 from fastapi import HTTPException
@@ -8,6 +9,8 @@ from app.web.schemas.orders import OrderCreateSchema
 from app.database.repositories.cart import CartRepository
 from app.bot.loader import bot
 from app.utils.payment import generate_payme_link
+
+logger = logging.getLogger(__name__)
 
 class OrderService:
     @staticmethod
@@ -123,7 +126,8 @@ class OrderService:
                 msg = f"💳 <b>Заказ #{new_order.id} создан!</b>\nОжидаем оплату: {total_amount} сум."
                 if user.telegram_id:
                     await bot.send_message(user.telegram_id, msg, parse_mode="HTML")
-            except: pass
+            except Exception:
+                logger.exception("Failed to send payme notification")
             return {"status": "redirect", "url": payme_url}
         if order_data.payment_method == "click":
             return {"status": "success", "order_id": new_order.id}
@@ -132,5 +136,6 @@ class OrderService:
                 msg = f"✅ <b>Заказ #{new_order.id} принят!</b>\n💰 {total_amount} сум\n📍 {final_address}\nОплата наличными при получении."
                 if user.telegram_id:
                     await bot.send_message(user.telegram_id, msg, parse_mode="HTML")
-            except: pass
+            except Exception:
+                logger.exception("Failed to send order notification")
             return {"status": "success", "order_id": new_order.id}

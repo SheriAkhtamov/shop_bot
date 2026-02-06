@@ -1,4 +1,5 @@
 import time
+import logging
 from datetime import datetime, timedelta
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -6,6 +7,8 @@ from sqlalchemy.orm import selectinload
 from app.database.models import Order, PaymeTransaction, User, Product, OrderItem
 from app.config import settings
 from app.bot.loader import bot
+
+logger = logging.getLogger(__name__)
 
 class PaymeErrors:
     INSUFFICIENT_PRIVILEGE = -32504
@@ -212,7 +215,7 @@ class PaymeService:
                          if order.user.telegram_id:
                              asyncio.create_task(bot.send_message(order.user.telegram_id, msg, parse_mode="HTML"))
                      except Exception:
-                         pass
+                         logger.exception("Failed to send Payme debt repayment notification")
             
             await self.session.commit()
             
