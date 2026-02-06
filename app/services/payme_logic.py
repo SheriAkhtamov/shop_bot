@@ -202,6 +202,13 @@ class PaymeService:
             order = (await self.session.execute(stmt_order)).scalar_one_or_none()
             
             if order:
+                if order.status in {"paid", "done"}:
+                    return {
+                        "perform_time": int(transaction.perform_time.timestamp() * 1000) if transaction.perform_time else 0,
+                        "transaction": str(transaction.id),
+                        "state": transaction.state
+                    }
+
                 user_locked = None
                 if order.order_type == "debt_repayment":
                     stmt_user = select(User).where(User.id == order.user_id).with_for_update()
