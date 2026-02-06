@@ -25,6 +25,8 @@ class OrderService:
             raise HTTPException(status_code=403, detail="У вас имеется задолженность. Пожалуйста, погасите её в профиле.")
 
         # Address handling
+        if order_data.delivery_method == "delivery" and not order_data.address:
+            raise HTTPException(status_code=400, detail="Адрес обязателен для доставки")
         final_address = "Самовывоз: Чиланзар, 1"
         if order_data.delivery_method == "delivery" and order_data.address:
             final_address = order_data.address
