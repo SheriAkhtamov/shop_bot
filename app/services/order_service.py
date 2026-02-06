@@ -48,6 +48,17 @@ class OrderService:
         if not cart_items:
             raise HTTPException(status_code=400, detail="Cart is empty")
 
+        items_to_delete = []
+        for item in cart_items:
+            if not item.product:
+                items_to_delete.append(item)
+
+        if items_to_delete:
+            for item in items_to_delete:
+                await session.delete(item)
+            await session.commit()
+            raise HTTPException(status_code=400, detail="Товар больше недоступен")
+
         total_amount = 0
         items_to_process = []
 
