@@ -1,10 +1,11 @@
 from typing import List
+import logging
 from datetime import datetime, timedelta
 from fastapi import APIRouter, Request, Depends, HTTPException, Query, Form
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_, update
+from sqlalchemy import select, or_, update, insert
 from sqlalchemy.orm import selectinload
 
 from app.database.core import get_db
@@ -22,6 +23,7 @@ from app.database.repositories.cart import CartRepository
 
 router = APIRouter(prefix="/shop", tags=["shop"])
 templates = Jinja2Templates(directory="app/templates")
+logger = logging.getLogger(__name__)
 
 async def check_rate_limit(
     user_id: int,
@@ -293,16 +295,16 @@ async def create_order(
                     msg = f"💳 <b>Заказ #{new_order.id} создан!</b>\nОжидаем оплату через Click: {new_order.total_amount} сум."
                     if user.telegram_id:
                         await bot.send_message(user.telegram_id, msg, parse_mode="HTML")
-                except: pass
+                except Exception:
+                    logger.exception("Failed to send Click order notification")
                 
                 return JSONResponse({"status": "redirect", "url": click_url})
         
         return JSONResponse(result)
     except HTTPException as e:
         return JSONResponse({"status": "error", "message": e.detail}, status_code=e.status_code)
-    except Exception as e:
-        # Log error here in future
-        print(f"Order Creation Error: {e}") 
+    except Exception:
+        logger.exception("Order creation error")
         return JSONResponse({"status": "error", "message": "Произошла ошибка при создании заказа"}, status_code=500)
 
 @router.post("/order/pay_debt")
