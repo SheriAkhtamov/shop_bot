@@ -3,6 +3,7 @@ import uuid
 import asyncio
 import logging
 from typing import Optional, List
+from urllib.parse import quote, unquote
 
 from fastapi import APIRouter, Request, Form, Depends, UploadFile, File, BackgroundTasks
 from fastapi.responses import RedirectResponse, HTMLResponse
@@ -681,10 +682,15 @@ async def order_detail(
     if not order:
         return RedirectResponse("/admin/orders")
 
+    error_message = request.query_params.get("error")
+    if error_message:
+        error_message = unquote(error_message)
+
     return templates.TemplateResponse("admin/order_detail.html", {
         "request": request, 
         "user": user, 
         "order": order,
+        "error": error_message,
         "csrf_token": generate_csrf_token(request)
     })
 
@@ -700,6 +706,7 @@ async def order_change_status(
     if not user: return RedirectResponse("/admin/login")
 
     order_repo = OrderRepository(session)
+    online_payment_methods = ("card", "click")
 
     if status == "cancelled":
         order = await OrderService.cancel_order(session, order_id)
@@ -709,6 +716,18 @@ async def order_change_status(
         order = await order_repo.get_with_lock(order_id)
 
         if order:
+            if (
+                status in ("delivery", "done")
+                and order.payment_method in online_payment_methods
+                and order.status == "new"
+            ):
+                error_message = (
+                    "Онлайн-заказ нельзя отправлять в доставку или завершать до оплаты."
+                )
+                return RedirectResponse(
+                    f"/admin/orders/{order_id}?error={quote(error_message)}",
+                    status_code=303,
+                )
             order.status = status
             await session.commit()
         
