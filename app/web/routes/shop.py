@@ -5,7 +5,6 @@ from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_, update
-from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import selectinload
 
 from app.database.core import get_db
@@ -34,22 +33,19 @@ async def check_rate_limit(
     expires_at = now + timedelta(seconds=cooldown_seconds)
     key = f"order_rate_limit:{user_id}"
 
-    stmt = (
-        insert(OrderRateLimit)
-        .values(key=key, expires_at=expires_at)
-        .on_conflict_do_update(
-            index_elements=[OrderRateLimit.key],
-            set_={"expires_at": expires_at},
-            where=OrderRateLimit.expires_at <= now,
-        )
-        .returning(OrderRateLimit.key)
-    )
-    result = await session.execute(stmt)
-    allowed = result.scalar_one_or_none() is not None
-    if allowed:
-        await session.commit()
-        return False
-    return True
+    stmt = select(OrderRateLimit).where(OrderRateLimit.key == key)
+    rate_limit = (await session.execute(stmt)).scalar_one_or_none()
+
+    if rate_limit and rate_limit.expires_at > now:
+        return True
+
+    if rate_limit:
+        rate_limit.expires_at = expires_at
+    else:
+        session.add(OrderRateLimit(key=key, expires_at=expires_at))
+
+    await session.commit()
+    return False
 
 @router.post("/auth")
 async def auth_user(request: Request, initData: str = Form(...), session: AsyncSession = Depends(get_db)):
