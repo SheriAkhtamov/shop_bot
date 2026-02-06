@@ -202,6 +202,12 @@ class ClickService:
 
         if not order:
             return {"error": ClickErrors.USER_DOES_NOT_EXIST, "error_note": "Order not found"}
+
+        if order.status in ("paid", "done"):
+            return {"error": ClickErrors.ALREADY_PAID, "error_note": "Order already paid"}
+
+        if order.status == "cancelled":
+            return {"error": ClickErrors.TRANSACTION_CANCELLED, "error_note": "Transaction cancelled"}
         
         # 3. Идемпотентность (если Click прислал повторный запрос на уже проведенную оплату)
         # Проверяем, есть ли уже успешная транзакция с таким click_trans_id
