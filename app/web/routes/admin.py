@@ -791,11 +791,13 @@ async def managers_list(
 
     repo = UserRepository(session)
     managers = await repo.get_admins()
+    error = request.query_params.get("error")
 
     return templates.TemplateResponse("admin/managers_list.html", {
         "request": request, 
         "user": user, 
         "managers": managers,
+        "error": error,
         "csrf_token": generate_csrf_token(request)
     })
 
@@ -836,7 +838,14 @@ async def manager_create(
         await session.commit()
     except Exception as e:
         logger.exception("Failed to create manager")
-        
+        await session.rollback()
+        from urllib.parse import quote
+        error_message = "Не удалось создать менеджера"
+        return RedirectResponse(
+            f"/admin/managers?error={quote(error_message)}",
+            status_code=303
+        )
+
     return RedirectResponse("/admin/managers", status_code=303)
 
 @router.post("/managers/delete/{manager_id}")
