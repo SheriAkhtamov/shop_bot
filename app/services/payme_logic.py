@@ -127,7 +127,11 @@ class PaymeService:
             await self._set_lock_timeout()
             stmt_order = (
                 select(Order)
-                .options(selectinload(Order.user), selectinload(Order.items).selectinload(OrderItem.product))
+                .options(
+                    selectinload(Order.user),
+                    selectinload(Order.items),
+                    selectinload(Order.items).selectinload(OrderItem.product),
+                )
                 .where(Order.id == order_id)
                 .with_for_update()
             )
@@ -157,15 +161,8 @@ class PaymeService:
                 debt_in_tiyins = order.user.debt * 100
                 if amount_tiyins > debt_in_tiyins:
                      raise PaymeException(PaymeErrors.INVALID_AMOUNT, {"ru": "Сумма превышает текущий долг"})
-        else:
+        elif order.order_type == "product":
             if not order.items:
-                stmt_items = (
-                    select(Order)
-                    .options(selectinload(Order.items).selectinload(OrderItem.product))
-                    .where(Order.id == order_id)
-                )
-                order = (await self.session.execute(stmt_items)).scalar_one_or_none()
-            if not order or not order.items:
                 raise PaymeException(PaymeErrors.ORDER_AVAILABLE, {"ru": "Order not ready"})
 
 
@@ -258,7 +255,11 @@ class PaymeService:
                 await self._set_lock_timeout()
                 stmt_order = (
                     select(Order)
-                    .options(selectinload(Order.user), selectinload(Order.items))
+                    .options(
+                        selectinload(Order.user),
+                        selectinload(Order.items),
+                        selectinload(Order.items).selectinload(OrderItem.product),
+                    )
                     .where(Order.id == transaction.order_id)
                     .with_for_update()
                 )
