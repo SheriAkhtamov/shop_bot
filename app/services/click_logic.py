@@ -60,6 +60,20 @@ class ClickService:
 
         return my_sign == sign_string
 
+    @staticmethod
+    def _validate_service_data(data: dict):
+        service_id = data.get("service_id")
+        if service_id is None:
+            return {"error": ClickErrors.ERROR_IN_REQUEST, "error_note": "Missing service_id"}
+        if str(service_id) != str(settings.CLICK_SERVICE_ID):
+            return {"error": ClickErrors.ERROR_IN_REQUEST, "error_note": "Invalid service_id"}
+
+        merchant_id = data.get("merchant_id")
+        if merchant_id is not None and str(merchant_id) != str(settings.CLICK_MERCHANT_ID):
+            return {"error": ClickErrors.ERROR_IN_REQUEST, "error_note": "Invalid merchant_id"}
+
+        return None
+
     async def prepare(self, data: dict):
         """Этап 1: Проверка возможности оплаты"""
         merchant_trans_id = data.get('merchant_trans_id')
@@ -76,6 +90,10 @@ class ClickService:
 
         if action != 0:
             return {"error": ClickErrors.ACTION_NOT_FOUND, "error_note": "Action not found"}
+
+        service_error = self._validate_service_data(data)
+        if service_error:
+            return service_error
 
         # 1. Проверка подписи
         if not self.check_sign(**data):
@@ -202,6 +220,10 @@ class ClickService:
 
         if action != 1:
             return {"error": ClickErrors.ACTION_NOT_FOUND, "error_note": "Action not found"}
+
+        service_error = self._validate_service_data(data)
+        if service_error:
+            return service_error
 
         # 2. Проверка подписи
         if not self.check_sign(**data):
