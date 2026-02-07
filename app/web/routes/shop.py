@@ -359,7 +359,7 @@ async def create_debt_payment(
         status="new",
         order_type="debt_repayment",
         payment_method="card",
-        delivery_method="none",
+        delivery_method="pickup",
         delivery_address=None,
         total_amount=amount,
         comment="Погашение долга",
