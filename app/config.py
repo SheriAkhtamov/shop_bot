@@ -10,6 +10,7 @@ class Settings:
     # --- СУПЕРАДМИН ---
     SUPERADMIN_LOGIN = "unicom"
     SUPERADMIN_PASSWORD = "unicombotadmin2026"
+    SYNC_SUPERADMIN_PASSWORD = False
 
     # --- НАСТРОЙКИ БД ---
     DB_USER = "postgres"
