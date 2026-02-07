@@ -327,15 +327,12 @@ class ClickService:
                 "error_note": "Transaction cancelled",
             }
 
-        if order.status in ("paid", "done"):
-            return {"error": ClickErrors.ALREADY_PAID, "error_note": "Order already paid"}
-
-        if order.status == "cancelled":
-            return {"error": ClickErrors.TRANSACTION_CANCELLED, "error_note": "Transaction cancelled"}
-        
         # 3. Идемпотентность (если Click прислал повторный запрос на уже проведенную оплату)
         # Проверяем, есть ли уже успешная транзакция с таким click_trans_id
-        tx_stmt = select(ClickTransaction).where(ClickTransaction.click_trans_id == click_trans_id, ClickTransaction.status == 'confirmed')
+        tx_stmt = select(ClickTransaction).where(
+            ClickTransaction.click_trans_id == click_trans_id,
+            ClickTransaction.status == 'confirmed',
+        )
         existing_tx = (await self.session.execute(tx_stmt)).scalar_one_or_none()
         
         if existing_tx:
@@ -344,11 +341,6 @@ class ClickService:
                     "error": ClickErrors.ERROR_IN_REQUEST,
                     "error_note": "Transaction merchant_trans_id mismatch",
                 }
-            if order.status not in ("paid", "done"):
-                return {
-                    "error": ClickErrors.ERROR_IN_REQUEST,
-                    "error_note": "Order is not paid",
-                }
             return {
                 "click_trans_id": click_trans_id,
                 "merchant_trans_id": merchant_trans_id,
@@ -356,6 +348,12 @@ class ClickService:
                 "error": ClickErrors.SUCCESS,
                 "error_note": "Already confirmed",
             }
+
+        if order.status in ("paid", "done"):
+            return {"error": ClickErrors.ALREADY_PAID, "error_note": "Order already paid"}
+
+        if order.status == "cancelled":
+            return {"error": ClickErrors.TRANSACTION_CANCELLED, "error_note": "Transaction cancelled"}
 
         # 5. Проводим оплату
         order_total = Decimal(order.total_amount)
