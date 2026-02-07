@@ -257,25 +257,30 @@ class PaymeService:
                         ordered_quantities[cart_item.product_id] = remaining - cart_item.quantity
                         await self.session.delete(cart_item)
 
-                 # ЛОГИКА ПОГАШЕНИЯ ДОЛГА
-                if order.order_type == "debt_repayment":
-                     order.status = "done" # Сразу завершен
+            # ЛОГИКА ПОГАШЕНИЯ ДОЛГА
+            if order.order_type == "debt_repayment":
+                order.status = "done"  # Сразу завершен
 
-                     paid_amount = order.total_amount
+                paid_amount = order.total_amount
 
-                     if user_locked:
-                         if user_locked.debt < paid_amount:
-                             user_locked.debt = 0
-                         else:
-                             user_locked.debt -= paid_amount
+                if user_locked:
+                    if user_locked.debt < paid_amount:
+                        user_locked.debt = 0
+                    else:
+                        user_locked.debt -= paid_amount
 
-                     # Уведомление
-                     try:
-                         msg = f"✅ <b>Долг погашен на {paid_amount} сум!</b>\nОстаток долга: {user_locked.debt if user_locked else 0} сум."
-                         if order.user.telegram_id:
-                             asyncio.create_task(bot.send_message(order.user.telegram_id, msg, parse_mode="HTML"))
-                     except Exception:
-                         logger.exception("Failed to send Payme debt repayment notification")
+                # Уведомление
+                try:
+                    msg = (
+                        f"✅ <b>Долг погашен на {paid_amount} сум!</b>\n"
+                        f"Остаток долга: {user_locked.debt if user_locked else 0} сум."
+                    )
+                    if order.user.telegram_id:
+                        asyncio.create_task(
+                            bot.send_message(order.user.telegram_id, msg, parse_mode="HTML")
+                        )
+                except Exception:
+                    logger.exception("Failed to send Payme debt repayment notification")
             
             await self.session.commit()
             
