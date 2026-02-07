@@ -14,8 +14,25 @@
         </a>
     </div>
     <h2 class="text-2xl font-extrabold text-[#3E2310]">{{ user.username or "Гость" }}</h2>
-    <p class="text-[#8C735F] font-medium">{{ user.phone }}</p>
+    <p class="text-[#8C735F] font-medium">{{ user.phone or "Телефон не указан" }}</p>
 </div>
+
+{% if not user.phone %}
+<div class="mx-5 mb-6 bg-white border-2 border-dashed border-[#E0CCB7] rounded-2xl p-5 shadow-coffee">
+    <div class="flex items-center gap-3 mb-2">
+        <i class="fas fa-user-edit text-[#6B3F1E] text-xl"></i>
+        <h3 class="text-[#3E2310] font-bold text-lg">Заполните профиль</h3>
+    </div>
+    <p class="text-sm text-[#8C735F] mb-4 leading-tight">
+        Укажите номер телефона, чтобы мы могли подтвердить заказ и связаться при доставке.
+    </p>
+    <a href="/shop/profile/edit"
+        class="w-full inline-flex items-center justify-center gap-2 bg-[#4A6B36] text-white font-bold py-3 px-4 rounded-xl shadow hover:bg-[#3e5c2d] active:scale-95 transition">
+        <span>Заполнить профиль</span>
+        <i class="fas fa-arrow-right"></i>
+    </a>
+</div>
+{% endif %}
 
 <!-- Debt Block -->
 {% if user.debt and user.debt > 0 %}

@@ -1,5 +1,6 @@
 from typing import List
 import logging
+import re
 from datetime import datetime, timedelta
 from fastapi import APIRouter, Request, Depends, HTTPException, Query, Form
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
@@ -77,6 +78,22 @@ async def auth_user(request: Request, initData: str = Form(...), session: AsyncS
     user = await user_repo.get_by_telegram_id(tg_id)
     if not user:
         raise HTTPException(status_code=500, detail="Failed to load user")
+
+    updated_profile = False
+    language_code = tg_user.get("language_code")
+    if language_code in ["ru", "uz"] and user.language != language_code:
+        user.language = language_code
+        updated_profile = True
+
+    phone_value = tg_user.get("phone_number") or tg_user.get("phone")
+    if phone_value:
+        phone_value = phone_value.strip()
+        if phone_value and user.phone != phone_value:
+            user.phone = phone_value
+            updated_profile = True
+
+    if updated_profile:
+        await session.commit()
 
     request.session["shop_user_id"] = user.id
     request.session["shop_telegram_id"] = tg_id
@@ -423,3 +440,26 @@ async def profile_page(request: Request, user: User = Depends(get_shop_user), se
     stmt = select(Order).where(Order.user_id == user.id).order_by(Order.created_at.desc())
     orders = (await session.execute(stmt)).scalars().all()
     return templates.TemplateResponse("shop/profile.html", {"request": request, "user": user, "orders": orders})
+
+@router.get("/profile/edit", response_class=HTMLResponse)
+async def profile_edit_page(request: Request, user: User = Depends(get_shop_user)):
+    return templates.TemplateResponse("shop/profile_edit.html", {"request": request, "user": user})
+
+@router.post("/profile/update")
+async def profile_update(
+    request: Request,
+    phone: str = Form(...),
+    language: str = Form("ru"),
+    user: User = Depends(get_shop_user),
+    session: AsyncSession = Depends(get_db),
+):
+    phone_value = phone.strip()
+    digits = re.sub(r"\D", "", phone_value)
+    if len(digits) < 9:
+        raise HTTPException(status_code=400, detail="Некорректный номер телефона")
+
+    user.phone = phone_value
+    if language in ["ru", "uz"]:
+        user.language = language
+    await session.commit()
+    return RedirectResponse("/shop/profile", status_code=303)
