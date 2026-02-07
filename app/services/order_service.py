@@ -66,7 +66,9 @@ class OrderService:
         order_data: OrderCreateSchema,
         session: AsyncSession
     ) -> Dict[str, Any]:
-        
+        if not (user.phone or "").strip():
+            raise HTTPException(status_code=400, detail="Заполните профиль: укажите номер телефона")
+
         phone_value = (order_data.phone or "").strip()
         if not phone_value:
             raise HTTPException(status_code=400, detail="Укажите номер телефона")
