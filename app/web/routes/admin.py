@@ -737,7 +737,7 @@ async def order_change_status(
         )
 
     if status == "cancelled":
-        order = await OrderService.cancel_order(session, order_id)
+        order = await OrderService.cancel_order(session, order_id, commit=False)
         if order:
             await session.commit()
     else:

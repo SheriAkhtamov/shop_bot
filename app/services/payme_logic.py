@@ -405,7 +405,7 @@ class PaymeService:
             transaction.state = -1
             transaction.reason = reason
             transaction.cancel_time = datetime.utcnow()
-            await OrderService.cancel_order(self.session, transaction.order_id)
+            await OrderService.cancel_order(self.session, transaction.order_id, commit=False)
             await self.session.commit()
         
         # Отмена оплаченной транзакции (возврат средств)
@@ -413,7 +413,7 @@ class PaymeService:
             transaction.state = -2
             transaction.reason = reason
             transaction.cancel_time = datetime.utcnow()
-            await OrderService.cancel_order(self.session, transaction.order_id)
+            await OrderService.cancel_order(self.session, transaction.order_id, commit=False)
             await self.session.commit()
             
         return {
