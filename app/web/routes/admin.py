@@ -748,7 +748,8 @@ async def order_change_status(
     if status == "cancelled":
         if order.status in ("paid", "done", "delivery"):
             error_message = (
-                "Нельзя отменять оплаченный, доставляемый или завершенный заказ без оформления возврата."
+                "Нельзя отменять оплаченный, доставляемый или завершенный заказ — "
+                "возвраты через админку не поддерживаются."
             )
             return RedirectResponse(
                 f"/admin/orders/{order_id}?error={quote(error_message)}",
