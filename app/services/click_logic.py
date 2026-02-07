@@ -311,6 +311,14 @@ class ClickService:
             return {"error": ClickErrors.ERROR_IN_REQUEST, "error_note": "Invalid error code"}
 
         if error_code < 0:
+            if order.status in ("paid", "done"):
+                return {
+                    "click_trans_id": click_trans_id,
+                    "merchant_trans_id": merchant_trans_id,
+                    "error": ClickErrors.TRANSACTION_CANCELLED,
+                    "error_note": "Transaction cannot be cancelled for paid order",
+                }
+
             if order.status == "cancelled":
                 return {
                     "click_trans_id": click_trans_id,
