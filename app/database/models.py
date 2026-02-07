@@ -65,7 +65,7 @@ class Product(Base):
 
     # Новые поля для фискализации
     ikpu: Mapped[str] = mapped_column(String, default="00702001001000001", nullable=True)
-    package_code: Mapped[str] = mapped_column(String, default="123456", nullable=True)
+    package_code: Mapped[str] = mapped_column(String, default="000000", nullable=True)
     
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 

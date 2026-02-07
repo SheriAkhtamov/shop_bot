@@ -194,7 +194,7 @@ class PaymeService:
                     "code": "00702001001000001",
                     "units": 241092,  # piece
                     "vat_percent": 0,
-                    "package_code": "123456",
+                    "package_code": settings.DEFAULT_PACKAGE_CODE,
                 }
             ]
         else:
@@ -206,7 +206,7 @@ class PaymeService:
                     "code": item.product.ikpu if item.product and item.product.ikpu else "00702001001000001",
                     "units": 241092, # piece
                     "vat_percent": 0,
-                    "package_code": item.product.package_code if item.product and item.product.package_code else "123456"
+                    "package_code": item.product.package_code if item.product and item.product.package_code else settings.DEFAULT_PACKAGE_CODE
                 }
                 for item in order.items
             ]

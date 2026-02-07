@@ -33,6 +33,25 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 templates = Jinja2Templates(directory="app/templates")
 logger = logging.getLogger(__name__)
 
+IMAGE_MAX_SIZE = (1024, 1024)
+IMAGE_QUALITY = 85
+IMAGE_FORMAT = "WEBP"
+IMAGE_EXTENSION = "webp"
+
+
+def process_product_image(file_bytes: bytes) -> bytes:
+    try:
+        with Image.open(BytesIO(file_bytes)) as img:
+            img.load()
+            if img.mode not in ("RGB", "RGBA"):
+                img = img.convert("RGB")
+            img.thumbnail(IMAGE_MAX_SIZE, Image.LANCZOS)
+            output = BytesIO()
+            img.save(output, format=IMAGE_FORMAT, quality=IMAGE_QUALITY, optimize=True)
+            return output.getvalue()
+    except Exception as exc:
+        raise ValueError("invalid_image") from exc
+
 async def get_current_admin(request: Request, session: AsyncSession = Depends(get_db)):
     user_id = request.session.get("user_id")
     if not user_id:
@@ -383,29 +402,22 @@ async def product_create_save(
     image_path = ""
     
     if image and image.filename:
-        extension = image.filename.split(".")[-1]
-        unique_name = f"{uuid.uuid4()}.{extension}"
-        
+        unique_name = f"{uuid.uuid4()}.{IMAGE_EXTENSION}"
+
         upload_dir = "media/products"
         await asyncio.to_thread(os.makedirs, upload_dir, exist_ok=True)
-        
-        file_location = f"{upload_dir}/{unique_name}"
-        
-        # Validate Image with PIL
-        try:
-            file_bytes = await image.read()
-            img = Image.open(BytesIO(file_bytes))
-            img.verify() # Verify it's an image
-            await image.seek(0) # Reset cursor
-        except Exception:
-             # Redirect with error flag
-             return RedirectResponse("/admin/products/new?error=invalid_image", status_code=303)
 
         file_location = f"{upload_dir}/{unique_name}"
-        
+
+        try:
+            file_bytes = await image.read()
+            processed_bytes = await asyncio.to_thread(process_product_image, file_bytes)
+        except Exception:
+            return RedirectResponse("/admin/products/new?error=invalid_image", status_code=303)
+
         async with aiofiles.open(file_location, "wb") as buffer:
-            await buffer.write(file_bytes)
-            
+            await buffer.write(processed_bytes)
+
         image_path = f"/media/products/{unique_name}"
 
     new_product = Product(
@@ -494,25 +506,22 @@ async def product_edit_save(
     new_image_path = None
 
     if image and image.filename:
-        # Validate Image with PIL
         try:
             file_bytes = await image.read()
-            img = Image.open(BytesIO(file_bytes))
-            img.verify()
-            await image.seek(0)
+            processed_bytes = await asyncio.to_thread(process_product_image, file_bytes)
         except Exception:
-            return RedirectResponse(f"/admin/products/{product_id}/edit?error=invalid_image", status_code=303)
+            return RedirectResponse(
+                f"/admin/products/{product_id}/edit?error=invalid_image", status_code=303
+            )
 
-        # Save new image
-        extension = image.filename.split(".")[-1]
-        unique_name = f"{uuid.uuid4()}.{extension}"
+        unique_name = f"{uuid.uuid4()}.{IMAGE_EXTENSION}"
         upload_dir = "media/products"
         await asyncio.to_thread(os.makedirs, upload_dir, exist_ok=True)
         file_location = f"{upload_dir}/{unique_name}"
 
         async with aiofiles.open(file_location, "wb") as buffer:
-            await buffer.write(file_bytes)
-            
+            await buffer.write(processed_bytes)
+
         new_image_path = f"/media/products/{unique_name}"
         product.image_path = new_image_path
         
@@ -737,9 +746,8 @@ async def order_change_status(
         )
 
     if status == "cancelled":
-        order = await OrderService.cancel_order(session, order_id, commit=False)
-        if order:
-            await session.commit()
+        async with session.begin():
+            order = await OrderService.cancel_order(session, order_id, commit=False)
     else:
         if (
             status in ("delivery", "done")
