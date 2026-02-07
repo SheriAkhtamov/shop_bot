@@ -327,12 +327,22 @@ class ClickService:
         existing_tx = (await self.session.execute(tx_stmt)).scalar_one_or_none()
         
         if existing_tx:
-             return {
+            if existing_tx.merchant_trans_id != merchant_trans_id:
+                return {
+                    "error": ClickErrors.ERROR_IN_REQUEST,
+                    "error_note": "Transaction merchant_trans_id mismatch",
+                }
+            if order.status not in ("paid", "done"):
+                return {
+                    "error": ClickErrors.ERROR_IN_REQUEST,
+                    "error_note": "Order is not paid",
+                }
+            return {
                 "click_trans_id": click_trans_id,
                 "merchant_trans_id": merchant_trans_id,
                 "merchant_confirm_id": order.id,
                 "error": ClickErrors.SUCCESS,
-                "error_note": "Already confirmed"
+                "error_note": "Already confirmed",
             }
 
         # 5. Проводим оплату
