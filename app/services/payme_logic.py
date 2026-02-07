@@ -205,6 +205,7 @@ class PaymeService:
             transaction.perform_time = datetime.utcnow()
 
             if order.status in {"paid", "done"}:
+                await self.session.commit()
                 return {
                     "perform_time": int(transaction.perform_time.timestamp() * 1000) if transaction.perform_time else 0,
                     "transaction": str(transaction.id),
