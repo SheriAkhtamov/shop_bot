@@ -111,6 +111,12 @@ class ClickService:
         if not order:
             return {"error": ClickErrors.USER_DOES_NOT_EXIST, "error_note": "Order not found"}
 
+        if order.payment_method != "click":
+            return {
+                "error": ClickErrors.ERROR_IN_REQUEST,
+                "error_note": "Order is not available for Click payment",
+            }
+
         if await OrderService.cancel_expired_online_order(self.session, order):
             return {"error": ClickErrors.TRANSACTION_CANCELLED, "error_note": "Order expired"}
 
@@ -273,6 +279,12 @@ class ClickService:
 
         if not order:
             return {"error": ClickErrors.USER_DOES_NOT_EXIST, "error_note": "Order not found"}
+
+        if order.payment_method != "click":
+            return {
+                "error": ClickErrors.TRANSACTION_CANCELLED,
+                "error_note": "Order is not available for Click payment",
+            }
 
         if await OrderService.cancel_expired_online_order(self.session, order):
             return {"error": ClickErrors.TRANSACTION_CANCELLED, "error_note": "Order expired"}
