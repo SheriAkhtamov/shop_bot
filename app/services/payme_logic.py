@@ -10,6 +10,7 @@ from app.database.models import Order, PaymeTransaction, User, Product, OrderIte
 from app.config import settings
 from app.bot.loader import bot
 from app.services.order_service import OrderService
+from app.utils.money import normalize_amount
 
 logger = logging.getLogger(__name__)
 
@@ -53,14 +54,11 @@ class PaymeService:
         await self.session.rollback()
         raise PaymeException(PaymeErrors.ORDER_AVAILABLE, {"ru": "Заказ занят, попробуйте позже"})
 
-    def _normalize_amount(self, amount_tiyins: int) -> int:
-        try:
-            return int(amount_tiyins)
-        except (TypeError, ValueError):
-            raise PaymeException(PaymeErrors.INVALID_AMOUNT, {"ru": "Неверная сумма"})
-
     async def check_perform_transaction(self, amount_tiyins: int, account: dict):
-        amount_tiyins = self._normalize_amount(amount_tiyins)
+        try:
+            amount_tiyins = normalize_amount(amount_tiyins)
+        except ValueError:
+            raise PaymeException(PaymeErrors.INVALID_AMOUNT, {"ru": "Неверная сумма"})
         order_id = account.get(settings.PAYME_ACCOUNT_FIELD)
         
         try:
@@ -86,7 +84,10 @@ class PaymeService:
         return {"allow": True}
 
     async def create_transaction(self, payme_id: str, time_ms: int, amount_tiyins: int, account: dict):
-        amount_tiyins = self._normalize_amount(amount_tiyins)
+        try:
+            amount_tiyins = normalize_amount(amount_tiyins)
+        except ValueError:
+            raise PaymeException(PaymeErrors.INVALID_AMOUNT, {"ru": "Неверная сумма"})
         order_id = account.get(settings.PAYME_ACCOUNT_FIELD)
         
         # Validate time (Payme guidelines: check if transaction is too old or from future)
