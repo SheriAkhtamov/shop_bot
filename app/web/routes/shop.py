@@ -1,4 +1,5 @@
 from typing import List
+import asyncio
 import logging
 import re
 from datetime import datetime, timedelta
@@ -76,9 +77,15 @@ async def auth_user(request: Request, initData: str = Form(...), session: AsyncS
     )
     await session.execute(stmt)
     await session.commit()
-    user = await user_repo.get_by_telegram_id(tg_id)
+    user = None
+    for attempt in range(2):
+        user = await user_repo.get_by_telegram_id(tg_id)
+        if user:
+            break
+        if attempt == 0:
+            await asyncio.sleep(0.1)
     if not user:
-        raise HTTPException(status_code=500, detail="Failed to load user")
+        raise HTTPException(status_code=503, detail="повторите попытку")
 
     updated_profile = False
     language_code = tg_user.get("language_code")
