@@ -134,6 +134,7 @@ class OrderItem(Base):
     product_name: Mapped[str] = mapped_column(String)
     price_at_purchase: Mapped[int] = mapped_column(Integer)
     quantity: Mapped[int] = mapped_column(Integer)
+    stock_before_order: Mapped[int | None] = mapped_column(Integer, nullable=True)
     
     order: Mapped["Order"] = relationship(back_populates="items")
     product: Mapped["Product"] = relationship()

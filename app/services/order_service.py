@@ -141,6 +141,7 @@ class OrderService:
         try:
             # 2. Atomic Stock Update
             for item in cart_items:
+                stock_before_order = item.product.stock
                 # Проверяем, не снят ли товар с продажи (Soft Delete)
                 if not item.product.is_active:
                     raise HTTPException(status_code=400, detail=f"Товар '{item.product.name_ru}' снят с продажи")
@@ -175,7 +176,7 @@ class OrderService:
                 
                 # However, 'update' doesn't return the price. The 'item.product' is loaded.
                 total_amount += item.product.price * item.quantity
-                items_to_process.append(item)
+                items_to_process.append((item, stock_before_order))
 
             if total_amount <= 0:
                 raise HTTPException(status_code=400, detail="Сумма заказа должна быть больше нуля")
@@ -200,13 +201,14 @@ class OrderService:
             await session.flush() # get ID
 
             # 4. Create Order Items & Clear Cart (Conditional)
-            for item in items_to_process:
+            for item, stock_before_order in items_to_process:
                 session.add(OrderItem(
                     order_id=new_order.id, 
                     product_id=item.product.id,
                     product_name=item.product.name_ru, 
                     price_at_purchase=item.product.price, 
-                    quantity=item.quantity
+                    quantity=item.quantity,
+                    stock_before_order=stock_before_order,
                 ))
                 
                 # Only delete from cart immediately for offline payments (cash/debt/etc).
@@ -271,10 +273,17 @@ class OrderService:
         if order.order_type == "product":
             for item in order.items:
                 if item.product_id:
+                    if item.stock_before_order is None:
+                        new_stock_value = Product.stock + item.quantity
+                    else:
+                        new_stock_value = func.greatest(
+                            Product.stock,
+                            func.least(Product.stock + item.quantity, item.stock_before_order),
+                        )
                     await session.execute(
                         update(Product)
                         .where(Product.id == item.product_id)
-                        .values(stock=Product.stock + item.quantity)
+                        .values(stock=new_stock_value)
                         .execution_options(synchronize_session="fetch")
                     )
 
