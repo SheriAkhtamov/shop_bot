@@ -320,6 +320,13 @@ class PaymeService:
             if await OrderService.cancel_expired_online_order(self.session, order):
                 raise PaymeException(PaymeErrors.ORDER_AVAILABLE, {"ru": "Заказ просрочен и отменен"})
 
+            allowed_statuses = {"new"}
+            if order.status not in allowed_statuses:
+                raise PaymeException(
+                    PaymeErrors.ORDER_AVAILABLE,
+                    {"ru": f"Заказ не доступен для оплаты в статусе {order.status}"},
+                )
+
             transaction.state = 2
             transaction.perform_time = datetime.utcnow()
 
