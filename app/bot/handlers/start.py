@@ -51,6 +51,15 @@ async def contact_received(message: types.Message, session: AsyncSession, state:
     data = await state.get_data()
     lang = data.get("language", "ru")
     phone = message.contact.phone_number
+
+    if message.contact.user_id and message.contact.user_id != message.from_user.id:
+        error_text = (
+            "Пожалуйста, отправьте свой номер телефона через кнопку 👇"
+            if lang == "ru"
+            else "Iltimos, tugma orqali o'zingizning telefon raqamingizni yuboring 👇"
+        )
+        await message.answer(error_text, reply_markup=reply.get_phone_kb(lang))
+        return
     
     # Создаем пользователя
     user_repo = UserRepository(session)
