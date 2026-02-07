@@ -13,8 +13,8 @@ async def click_prepare(
     merchant_trans_id: str = Form(...),
     amount: str = Form(...),
     action: int = Form(...),
-    error: int = Form(...),
-    error_note: str = Form(...),
+    error: int = Form(0),
+    error_note: str = Form(""),
     sign_time: str = Form(...),
     sign_string: str = Form(...),
     session: AsyncSession = Depends(get_db)
@@ -37,8 +37,8 @@ async def click_complete(
     merchant_trans_id: str = Form(...),
     amount: str = Form(...),
     action: int = Form(...),
-    error: int = Form(...),
-    error_note: str = Form(...),
+    error: int = Form(0),
+    error_note: str = Form(""),
     sign_time: str = Form(...),
     sign_string: str = Form(...),
     session: AsyncSession = Depends(get_db)
