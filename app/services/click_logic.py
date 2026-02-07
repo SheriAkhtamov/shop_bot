@@ -347,15 +347,15 @@ class ClickService:
         existing_tx = (await self.session.execute(tx_stmt)).scalar_one_or_none()
         
         if existing_tx:
-            if existing_tx.merchant_trans_id != merchant_trans_id:
-                return {
-                    "error": ClickErrors.ERROR_IN_REQUEST,
-                    "error_note": "Transaction merchant_trans_id mismatch",
-                }
             if order.status == "cancelled":
                 return {
                     "error": ClickErrors.TRANSACTION_CANCELLED,
                     "error_note": "Transaction cancelled",
+                }
+            if existing_tx.merchant_trans_id != merchant_trans_id:
+                return {
+                    "error": ClickErrors.ERROR_IN_REQUEST,
+                    "error_note": "Transaction merchant_trans_id mismatch",
                 }
             return {
                 "click_trans_id": click_trans_id,
