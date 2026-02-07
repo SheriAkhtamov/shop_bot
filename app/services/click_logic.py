@@ -260,7 +260,7 @@ class ClickService:
                 }
 
             # Явно обрабатываем отмену для оплаченных/завершенных заказов.
-            await OrderService.cancel_order(self.session, order.id)
+            await OrderService.cancel_order(self.session, order.id, commit=False)
             await self.session.commit()
 
             return {

@@ -38,7 +38,7 @@ class OrderService:
         order_ids = (await session.execute(stmt)).scalars().all()
 
         for order_id in order_ids:
-            await OrderService.cancel_order(session, order_id)
+            await OrderService.cancel_order(session, order_id, commit=False)
 
         if order_ids:
             await session.commit()
@@ -56,7 +56,6 @@ class OrderService:
             and order.created_at < OrderService._online_payment_timeout_cutoff()
         ):
             await OrderService.cancel_order(session, order.id)
-            await session.commit()
             return True
         return False
 
@@ -242,7 +241,12 @@ class OrderService:
             return {"status": "success", "order_id": new_order.id}
 
     @staticmethod
-    async def cancel_order(session: AsyncSession, order_id: int) -> Optional[Order]:
+    async def cancel_order(
+        session: AsyncSession,
+        order_id: int,
+        commit: bool = True,
+    ) -> Optional[Order]:
+        """Cancel order and optionally commit the transaction."""
         stmt = (
             select(Order)
             .options(
@@ -279,4 +283,6 @@ class OrderService:
             )
 
         order.status = "cancelled"
+        if commit:
+            await session.commit()
         return order
