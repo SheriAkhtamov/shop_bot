@@ -263,6 +263,12 @@ async def checkout_page(request: Request, items: List[int] = Query(None), user: 
     cart_repo = CartRepository(session)
     selected_items = await cart_repo.get_items_by_ids(items, user.id)
     if not selected_items: return RedirectResponse("/shop/cart")
+    unavailable_items = [item for item in selected_items if not item.product]
+    if unavailable_items:
+        for item in unavailable_items:
+            await session.delete(item)
+        await session.commit()
+        return RedirectResponse("/shop/cart", status_code=303)
     total_amount = sum(item.product.price * item.quantity for item in selected_items)
     total_count = sum(item.quantity for item in selected_items)
     csrf_token = generate_csrf_token(request)
