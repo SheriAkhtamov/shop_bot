@@ -111,12 +111,27 @@ class PaymeService:
         transaction = (await self.session.execute(stmt_tx)).scalar_one_or_none()
 
         if transaction:
+            # Идемпотентность Payme: повторный вызов возвращает текущее состояние транзакции.
             if transaction.amount != amount_tiyins:
                 raise PaymeException(PaymeErrors.INVALID_AMOUNT, {"ru": "Неверная сумма"})
+            try:
+                order_id_int = int(order_id)
+            except (ValueError, TypeError):
+                raise PaymeException(PaymeErrors.ORDER_NOT_FOUND, {"ru": "Неверный ID заказа"})
+            if transaction.order_id != order_id_int:
+                raise PaymeException(PaymeErrors.ORDER_AVAILABLE, {"ru": "Неверный ID заказа"})
             if transaction.state != 1:
-                raise PaymeException(PaymeErrors.CANT_CANCEL, {"ru": "Транзакция уже обрабатывается"})
-            if transaction.order_id != int(order_id):
-                 raise PaymeException(PaymeErrors.ORDER_AVAILABLE, {"ru": "Неверный ID заказа"})
+                return {
+                    "create_time": int(transaction.create_time.timestamp() * 1000),
+                    "perform_time": int(transaction.perform_time.timestamp() * 1000)
+                    if transaction.perform_time
+                    else 0,
+                    "cancel_time": int(transaction.cancel_time.timestamp() * 1000)
+                    if transaction.cancel_time
+                    else 0,
+                    "transaction": str(transaction.id),
+                    "state": transaction.state,
+                }
             
             return {
                 "create_time": int(transaction.create_time.timestamp() * 1000),
