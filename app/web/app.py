@@ -45,12 +45,21 @@ async def create_default_admin():
                 await session.commit()
                 logging.info(f"✅ Суперадмин создан! Логин: {settings.SUPERADMIN_LOGIN}")
             else:
-                # Обновляем пароль, если нужно (проверяем соответствие текущего пароля)
+                # Обновляем пароль только если разрешено в настройках
                 if not verify_password(settings.SUPERADMIN_PASSWORD, admin.password_hash):
-                    admin.password_hash = pwd_hash
-                    session.add(admin)
-                    await session.commit()
-                    logging.info(f"🔄 Пароль суперадмина {settings.SUPERADMIN_LOGIN} обновлен из конфига.")
+                    if settings.SYNC_SUPERADMIN_PASSWORD:
+                        admin.password_hash = pwd_hash
+                        session.add(admin)
+                        await session.commit()
+                        logging.info(
+                            f"🔄 Пароль суперадмина {settings.SUPERADMIN_LOGIN} обновлен из конфига."
+                        )
+                    else:
+                        logging.warning(
+                            "⚠️ Пароль суперадмина отличается от конфига, "
+                            "но SYNC_SUPERADMIN_PASSWORD выключен — "
+                            "автоматическое обновление не выполнено."
+                        )
                 else:
                     logging.info(f"✅ Суперадмин {settings.SUPERADMIN_LOGIN} уже существует и актуален.")
                 
