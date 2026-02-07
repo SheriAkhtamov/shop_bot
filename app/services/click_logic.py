@@ -10,6 +10,7 @@ from app.database.models import Order, ClickTransaction, User, CartItem
 from app.config import settings
 from app.bot.loader import bot
 from app.services.order_service import OrderService
+from app.utils.money import normalize_amount
 import logging
 
 logger = logging.getLogger(__name__)
@@ -53,11 +54,8 @@ class ClickService:
         """Этап 1: Проверка возможности оплаты"""
         merchant_trans_id = data.get('merchant_trans_id')
         try:
-            amount = Decimal(data.get('amount'))
-            amount_int = int(amount)
-        except (TypeError, ValueError, ArithmeticError):
-            return {"error": ClickErrors.INCORRECT_AMOUNT, "error_note": "Incorrect Amount"}
-        if amount != amount.to_integral_value():
+            amount_int = normalize_amount(data.get('amount'))
+        except ValueError:
             return {"error": ClickErrors.INCORRECT_AMOUNT, "error_note": "Incorrect Amount"}
 
         # 1. Проверка action (должен быть 0 для prepare)
@@ -178,11 +176,9 @@ class ClickService:
         """Этап 2: Проведение оплаты"""
         merchant_trans_id = data.get('merchant_trans_id')
         try:
-            amount = Decimal(data.get('amount'))
-            amount_int = int(amount)
-        except (TypeError, ValueError, ArithmeticError):
-            return {"error": ClickErrors.INCORRECT_AMOUNT, "error_note": "Incorrect Amount"}
-        if amount != amount.to_integral_value():
+            amount_int = normalize_amount(data.get('amount'))
+            amount = Decimal(amount_int)
+        except ValueError:
             return {"error": ClickErrors.INCORRECT_AMOUNT, "error_note": "Incorrect Amount"}
         try:
             click_trans_id = int(data.get('click_trans_id'))
