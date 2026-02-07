@@ -1,6 +1,5 @@
 from typing import List, Optional, Dict, Any
 import logging
-import re
 from datetime import datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, func
@@ -71,8 +70,7 @@ class OrderService:
         phone_value = (order_data.phone or "").strip()
         if not phone_value:
             raise HTTPException(status_code=400, detail="Укажите номер телефона")
-        digits = re.sub(r"\D", "", phone_value)
-        if len(digits) < 9:
+        if len(phone_value) < 9:
             raise HTTPException(status_code=400, detail="Некорректный номер телефона")
 
         # 0. Check Debt
@@ -196,7 +194,7 @@ class OrderService:
                 delivery_address=final_address,
                 total_amount=total_amount, 
                 comment=order_data.comment, 
-                contact_phone=order_data.phone
+                contact_phone=phone_value
             )
             session.add(new_order)
             await session.flush() # get ID
