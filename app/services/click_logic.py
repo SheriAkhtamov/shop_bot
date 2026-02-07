@@ -217,6 +217,32 @@ class ClickService:
         if await OrderService.cancel_expired_online_order(self.session, order):
             return {"error": ClickErrors.TRANSACTION_CANCELLED, "error_note": "Order expired"}
 
+        # 4. Проверка на отмену (если запрос action=1, но error < 0, значит Click отменяет платеж)
+        try:
+            error_code = int(data.get('error', 0))
+        except (TypeError, ValueError):
+            return {"error": ClickErrors.ERROR_IN_REQUEST, "error_note": "Invalid error code"}
+
+        if error_code < 0:
+            if order.status == "cancelled":
+                return {
+                    "click_trans_id": click_trans_id,
+                    "merchant_trans_id": merchant_trans_id,
+                    "error": ClickErrors.SUCCESS,
+                    "error_note": "Transaction already cancelled",
+                }
+
+            # Явно обрабатываем отмену для оплаченных/завершенных заказов.
+            await OrderService.cancel_order(self.session, order.id)
+            await self.session.commit()
+
+            return {
+                "click_trans_id": click_trans_id,
+                "merchant_trans_id": merchant_trans_id,
+                "error": ClickErrors.SUCCESS,
+                "error_note": "Transaction cancelled",
+            }
+
         if order.status in ("paid", "done"):
             return {"error": ClickErrors.ALREADY_PAID, "error_note": "Order already paid"}
 
@@ -235,19 +261,6 @@ class ClickService:
                 "merchant_confirm_id": order.id,
                 "error": ClickErrors.SUCCESS,
                 "error_note": "Already confirmed"
-            }
-
-        # 4. Проверка на отмену (если запрос action=1, но error < 0, значит Click отменяет платеж)
-        if int(data.get('error', 0)) < 0:
-            # Логика отмены
-            await OrderService.cancel_order(self.session, order.id)
-            await self.session.commit()
-            
-            return {
-                "click_trans_id": click_trans_id,
-                "merchant_trans_id": merchant_trans_id,
-                "error": ClickErrors.SUCCESS,
-                "error_note": "Transaction cancelled"
             }
 
         # 5. Проводим оплату
