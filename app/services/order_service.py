@@ -133,77 +133,84 @@ class OrderService:
         total_amount = 0
         items_to_process = []
 
-        # 2. Atomic Stock Update
-        for item in cart_items:
-            # Проверяем, не снят ли товар с продажи (Soft Delete)
-            if not item.product.is_active:
-                raise HTTPException(status_code=400, detail=f"Товар '{item.product.name_ru}' снят с продажи")
-            
-            # Atomic update: decrement stock only if stock >= quantity
-            stmt = (
-                update(Product)
-                .where(Product.id == item.product_id, Product.stock >= item.quantity)
-                .values(stock=Product.stock - item.quantity)
-                .execution_options(synchronize_session="fetch")
-            )
-            result = await session.execute(stmt)
-            
-            if result.rowcount == 0:
-                # Failed to update means out of stock or product missing
-                # We should check which one for better error message, but generally it's stock
-                # For better UX, we could fetch the product to see actual name, but let's fail fast first
-                # Or we can do a check before, but race condition might happen in between.
-                # The atomic update guarantees consistency.
+        try:
+            # 2. Atomic Stock Update
+            for item in cart_items:
+                # Проверяем, не снят ли товар с продажи (Soft Delete)
+                if not item.product.is_active:
+                    raise HTTPException(status_code=400, detail=f"Товар '{item.product.name_ru}' снят с продажи")
                 
-                # Let's fetch the product name to show a nice error
-                prod = await session.get(Product, item.product_id)
-                name = prod.name_ru if prod else f"ID {item.product_id}"
-                stock = prod.stock if prod else 0
-                raise HTTPException(status_code=400, detail=f"Товара '{name}' недостаточно (осталось {stock})")
-            
-            # If successful, calculate price using the product attached to cart item
-            # CAUTION: The product attached to cart_item might be stale in session if not refreshed,
-            # but usually it's fine. Safer to use current price. 
-            # Since we just updated it, we can trust the price from the 'product' relation loaded in 'cart_items'
-            # provided 'cart_repo.get_items_by_ids' loaded valid products.
-            
-            # However, 'update' doesn't return the price. The 'item.product' is loaded.
-            total_amount += item.product.price * item.quantity
-            items_to_process.append(item)
+                # Atomic update: decrement stock only if stock >= quantity
+                stmt = (
+                    update(Product)
+                    .where(Product.id == item.product_id, Product.stock >= item.quantity)
+                    .values(stock=Product.stock - item.quantity)
+                    .execution_options(synchronize_session="fetch")
+                )
+                result = await session.execute(stmt)
+                
+                if result.rowcount == 0:
+                    # Failed to update means out of stock or product missing
+                    # We should check which one for better error message, but generally it's stock
+                    # For better UX, we could fetch the product to see actual name, but let's fail fast first
+                    # Or we can do a check before, but race condition might happen in between.
+                    # The atomic update guarantees consistency.
+                    
+                    # Let's fetch the product name to show a nice error
+                    prod = await session.get(Product, item.product_id)
+                    name = prod.name_ru if prod else f"ID {item.product_id}"
+                    stock = prod.stock if prod else 0
+                    raise HTTPException(status_code=400, detail=f"Товара '{name}' недостаточно (осталось {stock})")
+                
+                # If successful, calculate price using the product attached to cart item
+                # CAUTION: The product attached to cart_item might be stale in session if not refreshed,
+                # but usually it's fine. Safer to use current price. 
+                # Since we just updated it, we can trust the price from the 'product' relation loaded in 'cart_items'
+                # provided 'cart_repo.get_items_by_ids' loaded valid products.
+                
+                # However, 'update' doesn't return the price. The 'item.product' is loaded.
+                total_amount += item.product.price * item.quantity
+                items_to_process.append(item)
 
-        if total_amount <= 0:
-            raise HTTPException(status_code=400, detail="Сумма заказа должна быть больше нуля")
+            if total_amount <= 0:
+                raise HTTPException(status_code=400, detail="Сумма заказа должна быть больше нуля")
 
-        # 3. Create Order
-        new_order = Order(
-            user_id=user.id, 
-            status="new", 
-            payment_method=order_data.payment_method,
-            delivery_method=order_data.delivery_method, 
-            delivery_address=final_address,
-            total_amount=total_amount, 
-            comment=order_data.comment, 
-            contact_phone=order_data.phone
-        )
-        session.add(new_order)
-        await session.flush() # get ID
+            # 3. Create Order
+            new_order = Order(
+                user_id=user.id, 
+                status="new", 
+                payment_method=order_data.payment_method,
+                delivery_method=order_data.delivery_method, 
+                delivery_address=final_address,
+                total_amount=total_amount, 
+                comment=order_data.comment, 
+                contact_phone=order_data.phone
+            )
+            session.add(new_order)
+            await session.flush() # get ID
 
-        # 4. Create Order Items & Clear Cart (Conditional)
-        for item in items_to_process:
-            session.add(OrderItem(
-                order_id=new_order.id, 
-                product_id=item.product.id,
-                product_name=item.product.name_ru, 
-                price_at_purchase=item.product.price, 
-                quantity=item.quantity
-            ))
+            # 4. Create Order Items & Clear Cart (Conditional)
+            for item in items_to_process:
+                session.add(OrderItem(
+                    order_id=new_order.id, 
+                    product_id=item.product.id,
+                    product_name=item.product.name_ru, 
+                    price_at_purchase=item.product.price, 
+                    quantity=item.quantity
+                ))
+                
+                # Only delete from cart immediately for offline payments (cash/debt/etc).
+                # For online payments (card/click), keep cart items until payment success callback.
+                if order_data.payment_method not in ("card", "click"):
+                    await session.delete(item)
             
-            # Only delete from cart immediately for offline payments (cash/debt/etc).
-            # For online payments (card/click), keep cart items until payment success callback.
-            if order_data.payment_method not in ("card", "click"):
-                await session.delete(item)
-        
-        await session.commit()
+            await session.commit()
+        except Exception as exc:
+            await session.rollback()
+            if isinstance(exc, HTTPException):
+                raise
+            logger.exception("Failed to create order")
+            raise HTTPException(status_code=500, detail="Не удалось создать заказ")
 
         # 5. Notifications
         payme_url = None
