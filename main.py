@@ -16,12 +16,26 @@ async def start_web():
     server = uvicorn.Server(config)
     await server.serve()
 
+async def run_with_restart(name, coro_factory, delay=5):
+    while True:
+        try:
+            logging.info("%s started", name)
+            await coro_factory()
+            logging.warning("%s stopped; restarting in %s seconds", name, delay)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logging.exception("%s crashed; restarting in %s seconds", name, delay)
+        await asyncio.sleep(delay)
+
 async def main():
-    # Запускаем параллельно
-    await asyncio.gather(
-        start_bot(),
-        start_web()
+    logging.basicConfig(level=logging.INFO)
+    # Запускаем параллельно с перезапуском
+    tasks = (
+        asyncio.create_task(run_with_restart("bot", start_bot)),
+        asyncio.create_task(run_with_restart("web", start_web)),
     )
+    await asyncio.gather(*tasks)
 
 if __name__ == "__main__":
     try:
