@@ -79,12 +79,14 @@ class OrderService:
             raise HTTPException(status_code=403, detail="У вас имеется задолженность. Пожалуйста, погасите её в профиле.")
 
         await OrderService.cancel_expired_online_orders(session, user_id=user.id)
+        cutoff = OrderService._online_payment_timeout_cutoff()
 
         # Prevent multiple unpaid online orders
         pending_online_order_stmt = select(Order).where(
             Order.user_id == user.id,
             Order.status == "new",
             Order.payment_method.in_(("card", "click")),
+            Order.created_at >= cutoff,
         )
         if (await session.execute(pending_online_order_stmt)).scalar_one_or_none():
             raise HTTPException(
