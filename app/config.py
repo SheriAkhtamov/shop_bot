@@ -42,6 +42,7 @@ class Settings:
     PAYME_ACCOUNT_FIELD = "order_id"
     PAYME_MIN_AMOUNT = 100000 
     ORDER_PAYMENT_TIMEOUT_MINUTES = 20
+    MIN_ORDER_AMOUNT = 100
 
     @property
     def DATABASE_URL(self):

@@ -10,6 +10,7 @@ from sqlalchemy.orm import selectinload
 
 from app.database.core import get_db
 from app.database.models import User, Product, Category, CartItem, Order, OrderItem, UserAddress, Favorite, OrderRateLimit
+from app.config import settings
 from app.bot.loader import bot
 from app.utils.security import check_telegram_auth
 from app.utils.payment import generate_payme_link, generate_click_link
@@ -380,6 +381,11 @@ async def create_debt_payment(
          
     if amount <= 0:
         raise HTTPException(status_code=400, detail="Сумма заказа должна быть больше нуля")
+    if amount < settings.MIN_ORDER_AMOUNT:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Минимальная сумма заказа — {settings.MIN_ORDER_AMOUNT} сум",
+        )
 
     # Проверка суммы погашения (нельзя оплатить больше, чем долг)
     if user.debt and amount > user.debt:

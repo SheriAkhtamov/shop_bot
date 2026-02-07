@@ -174,6 +174,11 @@ class OrderService:
 
             if total_amount <= 0:
                 raise HTTPException(status_code=400, detail="Сумма заказа должна быть больше нуля")
+            if total_amount < settings.MIN_ORDER_AMOUNT:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Минимальная сумма заказа — {settings.MIN_ORDER_AMOUNT} сум",
+                )
 
             # 3. Create Order
             new_order = Order(
