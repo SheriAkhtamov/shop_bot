@@ -199,7 +199,12 @@ class PaymeService:
                 # user.debt - долг в сумах
                 debt_in_tiyins = order.user.debt * 100
                 if amount_tiyins > debt_in_tiyins:
-                     raise PaymeException(PaymeErrors.INVALID_AMOUNT, {"ru": "Сумма превышает текущий долг"})
+                     await OrderService.cancel_order(self.session, order.id, commit=False)
+                     await self.session.commit()
+                     raise PaymeException(
+                         PaymeErrors.INVALID_AMOUNT,
+                         {"ru": "Сумма превышает текущий долг. Заказ отменен"},
+                     )
         elif order.order_type == "product":
             if not order.items:
                 raise PaymeException(PaymeErrors.ORDER_AVAILABLE, {"ru": "Order not ready"})
@@ -350,9 +355,11 @@ class PaymeService:
                     raise
                 current_debt = user_locked.debt if user_locked and user_locked.debt is not None else 0
                 if order.total_amount > current_debt:
+                    await OrderService.cancel_order(self.session, order.id, commit=False)
+                    await self.session.commit()
                     raise PaymeException(
                         PaymeErrors.INVALID_AMOUNT,
-                        {"ru": "Сумма превышает текущий долг"},
+                        {"ru": "Сумма превышает текущий долг. Заказ отменен"},
                     )
 
             order.status = "paid"
