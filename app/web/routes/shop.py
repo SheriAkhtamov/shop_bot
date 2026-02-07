@@ -170,10 +170,19 @@ async def add_to_cart(product_id: int, user: User = Depends(get_shop_user), sess
         # Atomic update to prevent race conditions
         stmt_update = (
             update(CartItem)
-            .where(CartItem.id == existing.id)
+            .where(
+                CartItem.id == existing.id,
+                CartItem.quantity == existing.quantity,
+            )
             .values(quantity=CartItem.quantity + 1)
         )
-        await session.execute(stmt_update)
+        result = await session.execute(stmt_update)
+        if result.rowcount == 0:
+            await session.rollback()
+            return JSONResponse(
+                {"success": False, "message": "повторите попытку"},
+                status_code=409,
+            )
     else:
         session.add(CartItem(user_id=user.id, product_id=product_id, quantity=1))
         
@@ -206,8 +215,21 @@ async def update_cart_qty(item_id: int, qty: int, user: User = Depends(get_shop_
              return JSONResponse({"success": False, "message": "Not enough stock"}, status_code=400)
         
         # Atomic update
-        stmt = update(CartItem).where(CartItem.id == item_id).values(quantity=qty)
-        await session.execute(stmt)
+        stmt = (
+            update(CartItem)
+            .where(
+                CartItem.id == item_id,
+                CartItem.quantity == item.quantity,
+            )
+            .values(quantity=qty)
+        )
+        result = await session.execute(stmt)
+        if result.rowcount == 0:
+            await session.rollback()
+            return JSONResponse(
+                {"success": False, "message": "повторите попытку"},
+                status_code=409,
+            )
         await session.commit()
     return {"success": True}
 
