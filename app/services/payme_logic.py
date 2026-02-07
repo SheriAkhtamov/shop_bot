@@ -72,6 +72,12 @@ class PaymeService:
         if not order:
             raise PaymeException(PaymeErrors.ORDER_NOT_FOUND, {"ru": "Заказ не найден"})
 
+        if order.payment_method != "card":
+            raise PaymeException(
+                PaymeErrors.ORDER_AVAILABLE,
+                {"ru": "Заказ не доступен для оплаты через Payme"},
+            )
+
         if await OrderService.cancel_expired_online_order(self.session, order):
             raise PaymeException(PaymeErrors.ORDER_AVAILABLE, {"ru": "Заказ просрочен и отменен"})
 
@@ -143,6 +149,12 @@ class PaymeService:
 
         if not order:
             raise PaymeException(PaymeErrors.ORDER_NOT_FOUND, {"ru": "Заказ не найден"})
+
+        if order.payment_method != "card":
+            raise PaymeException(
+                PaymeErrors.ORDER_AVAILABLE,
+                {"ru": "Заказ не доступен для оплаты через Payme"},
+            )
 
         if await OrderService.cancel_expired_online_order(self.session, order):
             raise PaymeException(PaymeErrors.ORDER_AVAILABLE, {"ru": "Заказ просрочен и отменен"})
@@ -271,6 +283,12 @@ class PaymeService:
             
             if not order:
                 raise PaymeException(PaymeErrors.ORDER_NOT_FOUND, {"ru": "Заказ не найден"})
+
+            if order.payment_method != "card":
+                raise PaymeException(
+                    PaymeErrors.ORDER_AVAILABLE,
+                    {"ru": "Заказ не доступен для оплаты через Payme"},
+                )
 
             if await OrderService.cancel_expired_online_order(self.session, order):
                 raise PaymeException(PaymeErrors.ORDER_AVAILABLE, {"ru": "Заказ просрочен и отменен"})
