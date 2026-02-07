@@ -52,7 +52,7 @@ async def contact_received(message: types.Message, session: AsyncSession, state:
     lang = data.get("language", "ru")
     phone = message.contact.phone_number
 
-    if not message.contact.user_id or message.contact.user_id != message.from_user.id:
+    if message.contact.user_id and message.contact.user_id != message.from_user.id:
         error_text = (
             "Пожалуйста, отправьте свой номер телефона через кнопку 👇"
             if lang == "ru"
