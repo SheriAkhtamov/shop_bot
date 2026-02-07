@@ -100,12 +100,18 @@ class OrderService:
             raise HTTPException(status_code=400, detail="Адрес обязателен для доставки")
         if order_data.delivery_method == "pickup":
             final_address = "Самовывоз: Чиланзар, 1"
+        elif order_data.delivery_method == "none":
+            final_address = "Без адреса"
         else:
             final_address = order_data.address
             # Update/Save address if new
-            stmt = select(UserAddress).where(UserAddress.user_id == user.id, UserAddress.address_text == order_data.address)
-            if not (await session.execute(stmt)).scalar_one_or_none():
-                session.add(UserAddress(user_id=user.id, address_text=order_data.address))
+            if order_data.address:
+                stmt = select(UserAddress).where(
+                    UserAddress.user_id == user.id,
+                    UserAddress.address_text == order_data.address,
+                )
+                if not (await session.execute(stmt)).scalar_one_or_none():
+                    session.add(UserAddress(user_id=user.id, address_text=order_data.address))
 
         # 1. Get Cart Items & IDOR Check
         cart_repo = CartRepository(session)
