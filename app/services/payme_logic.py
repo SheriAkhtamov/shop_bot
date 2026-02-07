@@ -2,9 +2,10 @@ import asyncio
 import logging
 import time
 from datetime import datetime, timedelta
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from sqlalchemy.exc import OperationalError
 from app.database.models import Order, PaymeTransaction, User, Product, OrderItem
 from app.config import settings
 from app.bot.loader import bot
@@ -30,8 +31,27 @@ class PaymeException(Exception):
         self.data = data
 
 class PaymeService:
+    LOCK_TIMEOUT = "5s"
+
     def __init__(self, session: AsyncSession):
         self.session = session
+
+    async def _set_lock_timeout(self) -> None:
+        await self.session.execute(
+            text("SET LOCAL lock_timeout = :timeout"),
+            {"timeout": self.LOCK_TIMEOUT},
+        )
+
+    def _is_lock_error(self, error: OperationalError) -> bool:
+        orig = getattr(error, "orig", None)
+        if orig and orig.__class__.__name__ == "LockNotAvailable":
+            return True
+        message = str(error).lower()
+        return "lock timeout" in message or "lock not available" in message or "could not obtain lock" in message
+
+    async def _raise_lock_error(self) -> None:
+        await self.session.rollback()
+        raise PaymeException(PaymeErrors.ORDER_AVAILABLE, {"ru": "Заказ занят, попробуйте позже"})
 
     def _normalize_amount(self, amount_tiyins: int) -> int:
         try:
@@ -102,8 +122,19 @@ class PaymeService:
         except (ValueError, TypeError):
              raise PaymeException(PaymeErrors.ORDER_NOT_FOUND, {"ru": "Неверный ID заказа"})
 
-        stmt_order = select(Order).options(selectinload(Order.user), selectinload(Order.items).selectinload(OrderItem.product)).where(Order.id == order_id).with_for_update()
-        order = (await self.session.execute(stmt_order)).scalar_one_or_none()
+        try:
+            await self._set_lock_timeout()
+            stmt_order = (
+                select(Order)
+                .options(selectinload(Order.user), selectinload(Order.items).selectinload(OrderItem.product))
+                .where(Order.id == order_id)
+                .with_for_update()
+            )
+            order = (await self.session.execute(stmt_order)).scalar_one_or_none()
+        except OperationalError as error:
+            if self._is_lock_error(error):
+                await self._raise_lock_error()
+            raise
 
         if not order:
             raise PaymeException(PaymeErrors.ORDER_NOT_FOUND, {"ru": "Заказ не найден"})
@@ -182,8 +213,18 @@ class PaymeService:
         }
 
     async def perform_transaction(self, payme_id: str):
-        stmt = select(PaymeTransaction).where(PaymeTransaction.payme_id == payme_id).with_for_update()
-        transaction = (await self.session.execute(stmt)).scalar_one_or_none()
+        try:
+            await self._set_lock_timeout()
+            stmt = (
+                select(PaymeTransaction)
+                .where(PaymeTransaction.payme_id == payme_id)
+                .with_for_update()
+            )
+            transaction = (await self.session.execute(stmt)).scalar_one_or_none()
+        except OperationalError as error:
+            if self._is_lock_error(error):
+                await self._raise_lock_error()
+            raise
         
         if not transaction:
             raise PaymeException(PaymeErrors.TRANSACTION_NOT_FOUND, {"ru": "Транзакция не найдена"})
@@ -201,8 +242,19 @@ class PaymeService:
                     await self.session.commit()
                     raise PaymeException(PaymeErrors.ALREADY_DONE, {"ru": "Таймаут транзакции"})
 
-            stmt_order = select(Order).options(selectinload(Order.user), selectinload(Order.items)).where(Order.id == transaction.order_id).with_for_update()
-            order = (await self.session.execute(stmt_order)).scalar_one_or_none()
+            try:
+                await self._set_lock_timeout()
+                stmt_order = (
+                    select(Order)
+                    .options(selectinload(Order.user), selectinload(Order.items))
+                    .where(Order.id == transaction.order_id)
+                    .with_for_update()
+                )
+                order = (await self.session.execute(stmt_order)).scalar_one_or_none()
+            except OperationalError as error:
+                if self._is_lock_error(error):
+                    await self._raise_lock_error()
+                raise
             
             if not order:
                 raise PaymeException(PaymeErrors.ORDER_NOT_FOUND, {"ru": "Заказ не найден"})
@@ -223,8 +275,14 @@ class PaymeService:
 
             user_locked = None
             if order.order_type == "debt_repayment":
-                stmt_user = select(User).where(User.id == order.user_id).with_for_update()
-                user_locked = (await self.session.execute(stmt_user)).scalar_one_or_none()
+                try:
+                    await self._set_lock_timeout()
+                    stmt_user = select(User).where(User.id == order.user_id).with_for_update()
+                    user_locked = (await self.session.execute(stmt_user)).scalar_one_or_none()
+                except OperationalError as error:
+                    if self._is_lock_error(error):
+                        await self._raise_lock_error()
+                    raise
                 current_debt = user_locked.debt if user_locked and user_locked.debt is not None else 0
                 if order.total_amount > current_debt:
                     raise PaymeException(
@@ -246,16 +304,22 @@ class PaymeService:
                     ordered_quantities[item.product_id] += item.quantity
 
             if ordered_quantities:
-                cart_stmt = (
-                    select(CartItem)
-                    .where(
-                        CartItem.user_id == order.user_id,
-                        CartItem.product_id.in_(ordered_quantities.keys()),
+                try:
+                    await self._set_lock_timeout()
+                    cart_stmt = (
+                        select(CartItem)
+                        .where(
+                            CartItem.user_id == order.user_id,
+                            CartItem.product_id.in_(ordered_quantities.keys()),
+                        )
+                        .order_by(CartItem.id)
+                        .with_for_update()
                     )
-                    .order_by(CartItem.id)
-                    .with_for_update()
-                )
-                cart_items = (await self.session.execute(cart_stmt)).scalars().all()
+                    cart_items = (await self.session.execute(cart_stmt)).scalars().all()
+                except OperationalError as error:
+                    if self._is_lock_error(error):
+                        await self._raise_lock_error()
+                    raise
                 for cart_item in cart_items:
                     remaining = ordered_quantities.get(cart_item.product_id, 0)
                     if remaining <= 0:
