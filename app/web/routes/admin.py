@@ -746,6 +746,14 @@ async def order_change_status(
         )
 
     if status == "cancelled":
+        if order.status in ("paid", "done", "delivery"):
+            error_message = (
+                "Нельзя отменять оплаченный, доставляемый или завершенный заказ без оформления возврата."
+            )
+            return RedirectResponse(
+                f"/admin/orders/{order_id}?error={quote(error_message)}",
+                status_code=303,
+            )
         async with session.begin():
             order = await OrderService.cancel_order(session, order_id, commit=False)
     else:
