@@ -17,7 +17,7 @@ from app.bot.loader import bot
 from app.utils.security import check_telegram_auth
 from app.utils.payment import generate_payme_link, generate_click_link
 
-from app.utils.csrf import generate_csrf_token, validate_csrf_header
+from app.utils.csrf import generate_csrf_token, validate_csrf, validate_csrf_header
 from app.web.schemas.orders import OrderCreateSchema
 from app.database.repositories.users import UserRepository
 from app.database.repositories.products import ProductRepository
@@ -413,7 +413,7 @@ async def create_order(
         await reset_rate_limit(user.id, session)
         return JSONResponse({"status": "error", "message": "Произошла ошибка при создании заказа"}, status_code=500)
 
-@router.post("/order/pay_debt")
+@router.post("/order/pay_debt", dependencies=[Depends(validate_csrf)])
 async def create_debt_payment(
     request: Request,
     amount: int = Form(...),
@@ -472,13 +472,21 @@ async def order_success_page(request: Request, order_id: int, user: User = Depen
 async def profile_page(request: Request, user: User = Depends(get_shop_user), session: AsyncSession = Depends(get_db)):
     stmt = select(Order).where(Order.user_id == user.id).order_by(Order.created_at.desc())
     orders = (await session.execute(stmt)).scalars().all()
-    return templates.TemplateResponse("shop/profile.html", {"request": request, "user": user, "orders": orders})
+    csrf_token = generate_csrf_token(request)
+    return templates.TemplateResponse(
+        "shop/profile.html",
+        {"request": request, "user": user, "orders": orders, "csrf_token": csrf_token},
+    )
 
 @router.get("/profile/edit", response_class=HTMLResponse)
 async def profile_edit_page(request: Request, user: User = Depends(get_shop_user)):
-    return templates.TemplateResponse("shop/profile_edit.html", {"request": request, "user": user})
+    csrf_token = generate_csrf_token(request)
+    return templates.TemplateResponse(
+        "shop/profile_edit.html",
+        {"request": request, "user": user, "csrf_token": csrf_token},
+    )
 
-@router.post("/profile/update")
+@router.post("/profile/update", dependencies=[Depends(validate_csrf)])
 async def profile_update(
     request: Request,
     phone: str = Form(...),
