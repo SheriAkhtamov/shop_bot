@@ -6,7 +6,7 @@ from decimal import Decimal
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from app.database.models import Order, ClickTransaction, User, CartItem
+from app.database.models import Order, ClickTransaction, User, CartItem, OrderItem
 from app.config import settings
 from app.bot.loader import bot
 from app.services.order_service import OrderService
@@ -140,23 +140,56 @@ class ClickService:
         Отправка фискальных данных в Click (см. файл Фискализация данных.pdf)
         """
         url = "https://api.click.uz/v2/merchant/payment/ofd_data/submit_items"
-        
+
+        if order.order_type == "product" and not order.items:
+            stmt = (
+                select(Order)
+                .options(selectinload(Order.items).selectinload(OrderItem.product))
+                .where(Order.id == order.id)
+            )
+            order = (await self.session.execute(stmt)).scalar_one_or_none()
+            if not order or not order.items:
+                logger.error(
+                    "Click Fiscal Error: order %s has no items for product order",
+                    order.id if order else None,
+                )
+                return
+
         # Формируем список товаров
         items_list = []
-        for item in order.items:
-            items_list.append({
-                "spic": item.product.ikpu if item.product and item.product.ikpu else "00702001001000001", # ИКПУ
-                "title": item.product_name,
-                "package_code": item.product.package_code if item.product and item.product.package_code else "123456",
-                "price": int(item.price_at_purchase) * 100, # В документации Click сумма items не всегда в тийинах, но обычно API работают с минимальными единицами. Проверим доку: "price: цена...". В Click обычно сумы. НО! Payme в тийинах. 
-                # ВАЖНО: В PDF Click написано "price: * uint64". И пример 505000. Это похоже на сумы или тийины? 
-                # В примере "amount": 1000. В "submit_items" price 505000. Скорее всего в сумах. 
-                # СТОП. В PDF написано "price... сумма... в тийинах" (стр 1 Item description).
-                # ЗНАЧИТ УМНОЖАЕМ НА 100.
-                "amount": item.quantity, # Количество
-                "units": 241092, # Штуки (код единицы)
-                "vat_percent": 0 # НДС
-            })
+        if order.order_type == "product":
+            expected_total = 0
+            for item in order.items:
+                if item.quantity <= 0 or item.price_at_purchase <= 0:
+                    logger.error(
+                        "Click Fiscal Error: invalid item data for order %s (item %s)",
+                        order.id,
+                        item.id,
+                    )
+                    return
+                expected_total += int(item.price_at_purchase) * int(item.quantity)
+                items_list.append({
+                    "spic": item.product.ikpu if item.product and item.product.ikpu else "00702001001000001", # ИКПУ
+                    "title": item.product_name,
+                    "package_code": item.product.package_code if item.product and item.product.package_code else "123456",
+                    "price": int(item.price_at_purchase) * 100, # В документации Click сумма items не всегда в тийинах, но обычно API работают с минимальными единицами. Проверим доку: "price: цена...". В Click обычно сумы. НО! Payme в тийинах. 
+                    # ВАЖНО: В PDF Click написано "price: * uint64". И пример 505000. Это похоже на сумы или тийины? 
+                    # В примере "amount": 1000. В "submit_items" price 505000. Скорее всего в сумах. 
+                    # СТОП. В PDF написано "price... сумма... в тийинах" (стр 1 Item description).
+                    # ЗНАЧИТ УМНОЖАЕМ НА 100.
+                    "amount": item.quantity, # Количество
+                    "units": 241092, # Штуки (код единицы)
+                    "vat_percent": 0 # НДС
+                })
+
+            if expected_total != int(order.total_amount):
+                logger.error(
+                    "Click Fiscal Error: order %s items total %s does not match order total %s",
+                    order.id,
+                    expected_total,
+                    order.total_amount,
+                )
+                return
             
         # Для услуг (погашение долга)
         if order.order_type == 'debt_repayment':
