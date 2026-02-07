@@ -313,9 +313,14 @@ async def toggle_favorite(product_id: int, user: User = Depends(get_shop_user), 
 @router.get("/checkout", response_class=HTMLResponse)
 async def checkout_page(request: Request, items: List[int] = Query(None), user: User = Depends(get_shop_user), session: AsyncSession = Depends(get_db)):
     if not items: return RedirectResponse("/shop/cart")
+    normalized_items = list(dict.fromkeys(items))
+    if not normalized_items:
+        return RedirectResponse("/shop/cart")
     cart_repo = CartRepository(session)
-    selected_items = await cart_repo.get_items_by_ids(items, user.id)
+    selected_items = await cart_repo.get_items_by_ids(normalized_items, user.id)
     if not selected_items: return RedirectResponse("/shop/cart")
+    if len(selected_items) != len(normalized_items):
+        return RedirectResponse("/shop/cart", status_code=303)
     unavailable_items = [item for item in selected_items if not item.product]
     if unavailable_items:
         for item in unavailable_items:
@@ -325,7 +330,7 @@ async def checkout_page(request: Request, items: List[int] = Query(None), user: 
     total_amount = sum(item.product.price * item.quantity for item in selected_items)
     total_count = sum(item.quantity for item in selected_items)
     csrf_token = generate_csrf_token(request)
-    return templates.TemplateResponse("shop/checkout.html", {"request": request, "user": user, "item_ids": items, "total_amount": total_amount, "total_count": total_count, "csrf_token": csrf_token})
+    return templates.TemplateResponse("shop/checkout.html", {"request": request, "user": user, "item_ids": normalized_items, "total_amount": total_amount, "total_count": total_count, "csrf_token": csrf_token})
      
 
 @router.post("/order/create", dependencies=[Depends(validate_csrf_header)])
