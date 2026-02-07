@@ -417,6 +417,7 @@ async def create_order(
 async def create_debt_payment(
     request: Request,
     amount: int = Form(...),
+    payment_method: str = Form(...),
     user: User = Depends(get_shop_user),
     session: AsyncSession = Depends(get_db)
 ):
@@ -439,12 +440,20 @@ async def create_debt_payment(
     if not user.debt or user.debt <= 0:
          return JSONResponse({"status": "error", "message": "У вас нет долгов"}, status_code=400)
 
+    payment_method_value = payment_method.strip().lower()
+    allowed_methods = {"card"}
+    if payment_method_value not in allowed_methods:
+        return JSONResponse(
+            {"status": "error", "message": "Погашение долга доступно только через Payme"},
+            status_code=400,
+        )
+
     # Создаем заказ на погашение долга
     new_order = Order(
         user_id=user.id,
         status="new",
         order_type="debt_repayment",
-        payment_method="card",
+        payment_method=payment_method_value,
         delivery_method="pickup",
         delivery_address=None,
         total_amount=amount,

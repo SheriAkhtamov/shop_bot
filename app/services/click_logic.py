@@ -111,6 +111,12 @@ class ClickService:
         if not order:
             return {"error": ClickErrors.USER_DOES_NOT_EXIST, "error_note": "Order not found"}
 
+        if order.order_type == "debt_repayment" and order.payment_method != "click":
+            return {
+                "error": ClickErrors.ERROR_IN_REQUEST,
+                "error_note": "Debt repayment is available only via Click",
+            }
+
         if order.payment_method != "click":
             return {
                 "error": ClickErrors.ERROR_IN_REQUEST,
@@ -279,6 +285,12 @@ class ClickService:
 
         if not order:
             return {"error": ClickErrors.USER_DOES_NOT_EXIST, "error_note": "Order not found"}
+
+        if order.order_type == "debt_repayment" and order.payment_method != "click":
+            return {
+                "error": ClickErrors.TRANSACTION_CANCELLED,
+                "error_note": "Debt repayment is available only via Click",
+            }
 
         if order.payment_method != "click":
             return {
