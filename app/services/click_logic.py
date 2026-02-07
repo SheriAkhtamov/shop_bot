@@ -147,27 +147,14 @@ class ClickService:
             "error_note": "Success"
         }
 
-    async def send_fiscal_data(self, payment_id: int, order: Order):
-        """
-        Отправка фискальных данных в Click (см. файл Фискализация данных.pdf)
-        """
-        url = "https://api.click.uz/v2/merchant/payment/ofd_data/submit_items"
-
+    def _build_fiscal_payload(self, payment_id: int, order: Order):
         if order.order_type == "product" and not order.items:
-            stmt = (
-                select(Order)
-                .options(selectinload(Order.items).selectinload(OrderItem.product))
-                .where(Order.id == order.id)
+            logger.error(
+                "Click Fiscal Error: order %s has no items for product order",
+                order.id,
             )
-            order = (await self.session.execute(stmt)).scalar_one_or_none()
-            if not order or not order.items:
-                logger.error(
-                    "Click Fiscal Error: order %s has no items for product order",
-                    order.id if order else None,
-                )
-                return
+            return None
 
-        # Формируем список товаров
         items_list = []
         if order.order_type == "product":
             expected_total = 0
@@ -178,21 +165,28 @@ class ClickService:
                         order.id,
                         item.id,
                     )
-                    return
+                    return None
                 expected_total += int(item.price_at_purchase) * int(item.quantity)
-                items_list.append({
-                    "spic": item.product.ikpu if item.product and item.product.ikpu else "00702001001000001", # ИКПУ
-                    "title": item.product_name,
-                    "package_code": item.product.package_code if item.product and item.product.package_code else settings.DEFAULT_PACKAGE_CODE,
-                    "price": int(item.price_at_purchase) * 100, # В документации Click сумма items не всегда в тийинах, но обычно API работают с минимальными единицами. Проверим доку: "price: цена...". В Click обычно сумы. НО! Payme в тийинах. 
-                    # ВАЖНО: В PDF Click написано "price: * uint64". И пример 505000. Это похоже на сумы или тийины? 
-                    # В примере "amount": 1000. В "submit_items" price 505000. Скорее всего в сумах. 
-                    # СТОП. В PDF написано "price... сумма... в тийинах" (стр 1 Item description).
-                    # ЗНАЧИТ УМНОЖАЕМ НА 100.
-                    "amount": item.quantity, # Количество
-                    "units": 241092, # Штуки (код единицы)
-                    "vat_percent": 0 # НДС
-                })
+                items_list.append(
+                    {
+                        "spic": item.product.ikpu
+                        if item.product and item.product.ikpu
+                        else "00702001001000001",  # ИКПУ
+                        "title": item.product_name,
+                        "package_code": item.product.package_code
+                        if item.product and item.product.package_code
+                        else settings.DEFAULT_PACKAGE_CODE,
+                        "price": int(item.price_at_purchase)
+                        * 100,  # В документации Click сумма items не всегда в тийинах, но обычно API работают с минимальными единицами. Проверим доку: "price: цена...". В Click обычно сумы. НО! Payme в тийинах.
+                        # ВАЖНО: В PDF Click написано "price: * uint64". И пример 505000. Это похоже на сумы или тийины?
+                        # В примере "amount": 1000. В "submit_items" price 505000. Скорее всего в сумах.
+                        # СТОП. В PDF написано "price... сумма... в тийинах" (стр 1 Item description).
+                        # ЗНАЧИТ УМНОЖАЕМ НА 100.
+                        "amount": item.quantity,  # Количество
+                        "units": 241092,  # Штуки (код единицы)
+                        "vat_percent": 0,  # НДС
+                    }
+                )
 
             if expected_total != int(order.total_amount):
                 logger.error(
@@ -201,37 +195,44 @@ class ClickService:
                     expected_total,
                     order.total_amount,
                 )
-                return
-            
-        # Для услуг (погашение долга)
-        if order.order_type == 'debt_repayment':
-             items_list.append({
-                "spic": "00702001001000001",
-                "title": "Погашение долга",
-                "package_code": settings.DEFAULT_PACKAGE_CODE,
-                "price": int(order.total_amount) * 100,
-                "amount": 1,
-                "units": 241092,
-                "vat_percent": 0
-            })
+                return None
 
-        # Формируем тело запроса
+        if order.order_type == "debt_repayment":
+            items_list.append(
+                {
+                    "spic": "00702001001000001",
+                    "title": "Погашение долга",
+                    "package_code": settings.DEFAULT_PACKAGE_CODE,
+                    "price": int(order.total_amount) * 100,
+                    "amount": 1,
+                    "units": 241092,
+                    "vat_percent": 0,
+                }
+            )
+
+        payload = {
+            "service_id": int(settings.CLICK_SERVICE_ID),
+            "payment_id": payment_id,  # ID платежа в системе CLICK (не наш!)
+            "items": items_list,
+            "received_ecash": int(order.total_amount) * 100,  # Сумма электронными (текущая оплата)
+            "received_cash": 0,
+            "received_card": 0,
+        }
+
+        return payload
+
+    async def send_fiscal_data(self, payload: dict, order_id: int):
+        """
+        Отправка фискальных данных в Click (см. файл Фискализация данных.pdf)
+        """
+        url = "https://api.click.uz/v2/merchant/payment/ofd_data/submit_items"
         timestamp = int(time.time())
-        digest = hashlib.sha1(f"{timestamp}{settings.CLICK_SECRET_KEY}".encode('utf-8')).hexdigest()
-        
+        digest = hashlib.sha1(f"{timestamp}{settings.CLICK_SECRET_KEY}".encode("utf-8")).hexdigest()
+
         headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
-            "Auth": f"{settings.CLICK_MERCHANT_USER_ID}:{digest}:{timestamp}"
-        }
-        
-        payload = {
-            "service_id": int(settings.CLICK_SERVICE_ID),
-            "payment_id": payment_id, # ID платежа в системе CLICK (не наш!)
-            "items": items_list,
-            "received_ecash": int(order.total_amount) * 100, # Сумма электронными (текущая оплата)
-            "received_cash": 0,
-            "received_card": 0
+            "Auth": f"{settings.CLICK_MERCHANT_USER_ID}:{digest}:{timestamp}",
         }
 
         try:
@@ -239,11 +240,11 @@ class ClickService:
                 async with http_session.post(url, headers=headers, json=payload) as resp:
                     resp_data = await resp.json()
                     if resp.status != 200:
-                        logger.error(f"Click Fiscal Error: {resp_data}")
+                        logger.error("Click Fiscal Error (order %s): %s", order_id, resp_data)
                     else:
-                        logger.info(f"Click Fiscal Success: {resp_data}")
+                        logger.info("Click Fiscal Success (order %s): %s", order_id, resp_data)
         except Exception as e:
-            logger.error(f"Click Fiscal Request Failed: {e}")
+            logger.error("Click Fiscal Request Failed (order %s): %s", order_id, e)
 
     async def complete(self, data: dict):
         """Этап 2: Проведение оплаты"""
@@ -280,7 +281,15 @@ class ClickService:
         except (TypeError, ValueError):
             return {"error": ClickErrors.USER_DOES_NOT_EXIST, "error_note": "Invalid Order ID"}
 
-        stmt = select(Order).options(selectinload(Order.user), selectinload(Order.items)).where(Order.id == order_id).with_for_update()
+        stmt = (
+            select(Order)
+            .options(
+                selectinload(Order.user),
+                selectinload(Order.items).selectinload(OrderItem.product),
+            )
+            .where(Order.id == order_id)
+            .with_for_update()
+        )
         order = (await self.session.execute(stmt)).scalar_one_or_none()
 
         if not order:
@@ -452,8 +461,10 @@ class ClickService:
             # Отправляем чек в налоговую через Click
             # click_trans_id - это ID платежа в системе Click
             try:
-                 # Запускаем в фоне, чтобы не тормозить ответ
-                asyncio.create_task(self.send_fiscal_data(click_trans_id, order))
+                fiscal_payload = self._build_fiscal_payload(click_trans_id, order)
+                if fiscal_payload:
+                    # Запускаем в фоне, чтобы не тормозить ответ
+                    asyncio.create_task(self.send_fiscal_data(fiscal_payload, order.id))
             except Exception as e:
                 logger.error(f"Failed to start fiscal task: {e}")
             
