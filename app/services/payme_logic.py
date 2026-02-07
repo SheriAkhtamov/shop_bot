@@ -125,6 +125,16 @@ class PaymeService:
                 debt_in_tiyins = order.user.debt * 100
                 if amount_tiyins > debt_in_tiyins:
                      raise PaymeException(PaymeErrors.INVALID_AMOUNT, {"ru": "Сумма превышает текущий долг"})
+        else:
+            if not order.items:
+                stmt_items = (
+                    select(Order)
+                    .options(selectinload(Order.items).selectinload(OrderItem.product))
+                    .where(Order.id == order_id)
+                )
+                order = (await self.session.execute(stmt_items)).scalar_one_or_none()
+            if not order or not order.items:
+                raise PaymeException(PaymeErrors.ORDER_AVAILABLE, {"ru": "Order not ready"})
 
 
         stmt_check = select(PaymeTransaction).where(
