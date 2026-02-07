@@ -1,5 +1,5 @@
 import asyncio
-from app.database.core import async_session_maker, engine
+from app.database.core import Base, async_session_maker, engine
 from app.database.models import User
 from app.utils.security import get_password_hash
 
