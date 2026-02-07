@@ -12,9 +12,19 @@
             <p class="mb-2"><span class="font-bold">Телефон:</span> <a href="tel:{{ order.contact_phone }}"
                     class="text-blue-500">{{ order.contact_phone }}</a></p>
             <p class="mb-2"><span class="font-bold">Способ:</span>
-                {% if order.delivery_method == 'delivery' %}Доставка{% else %}Самовывоз{% endif %}
+                {% if order.delivery_method == 'delivery' %}
+                Доставка
+                {% elif order.delivery_method == 'pickup' %}
+                Самовывоз
+                {% elif order.delivery_method == 'digital' %}
+                Цифровая доставка
+                {% else %}
+                Не указан
+                {% endif %}
             </p>
+            {% if order.delivery_method == 'delivery' and order.delivery_address %}
             <p class="mb-2"><span class="font-bold">Адрес:</span><br> {{ order.delivery_address }}</p>
+            {% endif %}
             {% if order.comment %}
             <p class="mb-2 bg-yellow-100 p-2 rounded text-sm"><span class="font-bold">Комментарий:</span> {{
                 order.comment }}</p>
