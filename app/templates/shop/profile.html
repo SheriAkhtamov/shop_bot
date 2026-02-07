@@ -48,6 +48,7 @@
         Для возможности совершать новые покупки, пожалуйста, погасите долг.
     </p>
     <form action="/shop/order/pay_debt" method="POST" id="debtForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <div class="relative">
             <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">
                 💰
