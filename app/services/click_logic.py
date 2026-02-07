@@ -57,6 +57,8 @@ class ClickService:
             amount_int = int(amount)
         except (TypeError, ValueError, ArithmeticError):
             return {"error": ClickErrors.INCORRECT_AMOUNT, "error_note": "Incorrect Amount"}
+        if amount != amount.to_integral_value():
+            return {"error": ClickErrors.INCORRECT_AMOUNT, "error_note": "Incorrect Amount"}
 
         # 1. Проверка action (должен быть 0 для prepare)
         try:
@@ -176,6 +178,8 @@ class ClickService:
             amount = Decimal(data.get('amount'))
             amount_int = int(amount)
         except (TypeError, ValueError, ArithmeticError):
+            return {"error": ClickErrors.INCORRECT_AMOUNT, "error_note": "Incorrect Amount"}
+        if amount != amount.to_integral_value():
             return {"error": ClickErrors.INCORRECT_AMOUNT, "error_note": "Incorrect Amount"}
         try:
             click_trans_id = int(data.get('click_trans_id'))
