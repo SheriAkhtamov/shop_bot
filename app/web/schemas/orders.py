@@ -6,7 +6,7 @@ from .base import FormSchema
 
 class OrderCreateSchema(FormSchema):
     item_ids: List[int]
-    delivery_method: Literal["pickup", "delivery", "none"]
+    delivery_method: Literal["pickup", "delivery"]
     payment_method: Literal["cash", "card", "click"]
     phone: str
     address: Optional[str] = Field(None, max_length=500)
@@ -37,7 +37,7 @@ class OrderCreateSchema(FormSchema):
     def as_form(
         cls,
         item_ids: List[int] = Form(...),
-        delivery_method: str = Form(..., pattern="^(pickup|delivery|none)$"),
+        delivery_method: str = Form(..., pattern="^(pickup|delivery)$"),
         payment_method: str = Form(..., pattern="^(cash|card|click)$"),
         phone: str = Form(...),
         address: Optional[str] = Form(None),
