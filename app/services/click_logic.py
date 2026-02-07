@@ -302,8 +302,11 @@ class ClickService:
             return {"error": ClickErrors.TRANSACTION_CANCELLED, "error_note": "Order expired"}
 
         # 4. Проверка на отмену (если запрос action=1, но error < 0, значит Click отменяет платеж)
+        raw_error = data.get('error', 0)
+        if raw_error in (None, ""):
+            raw_error = 0
         try:
-            error_code = int(data.get('error', 0))
+            error_code = int(raw_error)
         except (TypeError, ValueError):
             return {"error": ClickErrors.ERROR_IN_REQUEST, "error_note": "Invalid error code"}
 
