@@ -85,6 +85,9 @@ class ClickService:
         if not order:
             return {"error": ClickErrors.USER_DOES_NOT_EXIST, "error_note": "Order not found"}
 
+        if await OrderService.cancel_expired_online_order(self.session, order):
+            return {"error": ClickErrors.TRANSACTION_CANCELLED, "error_note": "Order expired"}
+
         # 3. Проверка суммы
         order_total_int = int(Decimal(order.total_amount))
         if amount_int != order_total_int:
@@ -210,6 +213,9 @@ class ClickService:
 
         if not order:
             return {"error": ClickErrors.USER_DOES_NOT_EXIST, "error_note": "Order not found"}
+
+        if await OrderService.cancel_expired_online_order(self.session, order):
+            return {"error": ClickErrors.TRANSACTION_CANCELLED, "error_note": "Order expired"}
 
         if order.status in ("paid", "done"):
             return {"error": ClickErrors.ALREADY_PAID, "error_note": "Order already paid"}

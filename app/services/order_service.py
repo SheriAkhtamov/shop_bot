@@ -1,11 +1,13 @@
 from typing import List, Optional, Dict, Any
 import logging
 import re
+from datetime import datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, func
 from sqlalchemy.orm import selectinload
 from fastapi import HTTPException
 
+from app.config import settings
 from app.database.models import User, Product, Order, OrderItem, UserAddress, CartItem
 from app.web.schemas.orders import OrderCreateSchema
 from app.database.repositories.cart import CartRepository
@@ -15,6 +17,49 @@ from app.utils.payment import generate_payme_link
 logger = logging.getLogger(__name__)
 
 class OrderService:
+    @staticmethod
+    def _online_payment_timeout_cutoff() -> datetime:
+        timeout_minutes = getattr(settings, "ORDER_PAYMENT_TIMEOUT_MINUTES", 20)
+        return datetime.utcnow() - timedelta(minutes=timeout_minutes)
+
+    @staticmethod
+    async def cancel_expired_online_orders(
+        session: AsyncSession,
+        user_id: Optional[int] = None,
+    ) -> List[int]:
+        cutoff = OrderService._online_payment_timeout_cutoff()
+        stmt = select(Order.id).where(
+            Order.status == "new",
+            Order.payment_method.in_(("card", "click")),
+            Order.created_at < cutoff,
+        )
+        if user_id is not None:
+            stmt = stmt.where(Order.user_id == user_id)
+        order_ids = (await session.execute(stmt)).scalars().all()
+
+        for order_id in order_ids:
+            await OrderService.cancel_order(session, order_id)
+
+        if order_ids:
+            await session.commit()
+
+        return order_ids
+
+    @staticmethod
+    async def cancel_expired_online_order(
+        session: AsyncSession,
+        order: Order,
+    ) -> bool:
+        if (
+            order.status == "new"
+            and order.payment_method in ("card", "click")
+            and order.created_at < OrderService._online_payment_timeout_cutoff()
+        ):
+            await OrderService.cancel_order(session, order.id)
+            await session.commit()
+            return True
+        return False
+
     @staticmethod
     async def create_order(
         user: User,
@@ -32,6 +77,8 @@ class OrderService:
         # 0. Check Debt
         if user.debt and user.debt > 0:
             raise HTTPException(status_code=403, detail="У вас имеется задолженность. Пожалуйста, погасите её в профиле.")
+
+        await OrderService.cancel_expired_online_orders(session, user_id=user.id)
 
         # Prevent multiple unpaid online orders
         pending_online_order_stmt = select(Order).where(

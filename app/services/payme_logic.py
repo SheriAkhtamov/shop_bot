@@ -54,6 +54,9 @@ class PaymeService:
         if not order:
             raise PaymeException(PaymeErrors.ORDER_NOT_FOUND, {"ru": "Заказ не найден"})
 
+        if await OrderService.cancel_expired_online_order(self.session, order):
+            raise PaymeException(PaymeErrors.ORDER_AVAILABLE, {"ru": "Заказ просрочен и отменен"})
+
         if order.total_amount * 100 != amount_tiyins:
             raise PaymeException(PaymeErrors.INVALID_AMOUNT, {"ru": "Неверная сумма"})
 
@@ -104,6 +107,9 @@ class PaymeService:
 
         if not order:
             raise PaymeException(PaymeErrors.ORDER_NOT_FOUND, {"ru": "Заказ не найден"})
+
+        if await OrderService.cancel_expired_online_order(self.session, order):
+            raise PaymeException(PaymeErrors.ORDER_AVAILABLE, {"ru": "Заказ просрочен и отменен"})
 
         if order.total_amount * 100 != amount_tiyins:
             raise PaymeException(PaymeErrors.INVALID_AMOUNT, {"ru": "Неверная сумма"})
@@ -200,6 +206,9 @@ class PaymeService:
             
             if not order:
                 raise PaymeException(PaymeErrors.ORDER_NOT_FOUND, {"ru": "Заказ не найден"})
+
+            if await OrderService.cancel_expired_online_order(self.session, order):
+                raise PaymeException(PaymeErrors.ORDER_AVAILABLE, {"ru": "Заказ просрочен и отменен"})
 
             transaction.state = 2
             transaction.perform_time = datetime.utcnow()
