@@ -72,6 +72,12 @@ class PaymeService:
         if not order:
             raise PaymeException(PaymeErrors.ORDER_NOT_FOUND, {"ru": "Заказ не найден"})
 
+        if order.order_type == "debt_repayment" and order.payment_method != "card":
+            raise PaymeException(
+                PaymeErrors.ORDER_AVAILABLE,
+                {"ru": "Погашение долга доступно только через Payme"},
+            )
+
         if order.payment_method != "card":
             raise PaymeException(
                 PaymeErrors.ORDER_AVAILABLE,
@@ -164,6 +170,12 @@ class PaymeService:
 
         if not order:
             raise PaymeException(PaymeErrors.ORDER_NOT_FOUND, {"ru": "Заказ не найден"})
+
+        if order.order_type == "debt_repayment" and order.payment_method != "card":
+            raise PaymeException(
+                PaymeErrors.ORDER_AVAILABLE,
+                {"ru": "Погашение долга доступно только через Payme"},
+            )
 
         if order.payment_method != "card":
             raise PaymeException(
