@@ -401,7 +401,7 @@ async def create_order(
                 
                 return JSONResponse({"status": "redirect", "url": click_url})
 
-        if result.get("status") != "success":
+        if result.get("status") not in {"success", "redirect"}:
             await reset_rate_limit(user.id, session)
 
         return JSONResponse(result)
