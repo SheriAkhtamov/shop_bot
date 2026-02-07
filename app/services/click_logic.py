@@ -31,6 +31,16 @@ class ClickService:
     def __init__(self, session: AsyncSession):
         self.session = session
 
+    @staticmethod
+    def _parse_amount(raw_amount):
+        if raw_amount is None:
+            raise ValueError("Amount is missing")
+        normalized = "".join(str(raw_amount).split()).replace(",", ".")
+        amount = Decimal(normalized)
+        if amount != amount.to_integral_value():
+            raise ValueError("Amount must be integer")
+        return amount
+
     def check_sign(self, **kwargs):
         """Проверка цифровой подписи (MD5)"""
         click_trans_id = kwargs.get('click_trans_id')
@@ -54,8 +64,8 @@ class ClickService:
         """Этап 1: Проверка возможности оплаты"""
         merchant_trans_id = data.get('merchant_trans_id')
         try:
-            amount_int = normalize_amount(data.get('amount'))
-        except ValueError:
+            amount = self._parse_amount(data.get('amount'))
+        except (TypeError, ValueError, ArithmeticError):
             return {"error": ClickErrors.INCORRECT_AMOUNT, "error_note": "Incorrect Amount"}
 
         # 1. Проверка action (должен быть 0 для prepare)
@@ -87,8 +97,8 @@ class ClickService:
             return {"error": ClickErrors.TRANSACTION_CANCELLED, "error_note": "Order expired"}
 
         # 3. Проверка суммы
-        order_total_int = int(Decimal(order.total_amount))
-        if amount_int != order_total_int:
+        order_total = Decimal(order.total_amount)
+        if amount != order_total:
             return {"error": ClickErrors.INCORRECT_AMOUNT, "error_note": "Incorrect Amount"}
 
         # 4. Проверка статуса (если уже оплачен)
@@ -176,9 +186,8 @@ class ClickService:
         """Этап 2: Проведение оплаты"""
         merchant_trans_id = data.get('merchant_trans_id')
         try:
-            amount_int = normalize_amount(data.get('amount'))
-            amount = Decimal(amount_int)
-        except ValueError:
+            amount = self._parse_amount(data.get('amount'))
+        except (TypeError, ValueError, ArithmeticError):
             return {"error": ClickErrors.INCORRECT_AMOUNT, "error_note": "Incorrect Amount"}
         try:
             click_trans_id = int(data.get('click_trans_id'))
@@ -260,8 +269,8 @@ class ClickService:
             }
 
         # 5. Проводим оплату
-        order_total_int = int(Decimal(order.total_amount))
-        if amount_int != order_total_int:
+        order_total = Decimal(order.total_amount)
+        if amount != order_total:
             return {"error": ClickErrors.INCORRECT_AMOUNT, "error_note": "Incorrect Amount"}
 
         user_locked = None

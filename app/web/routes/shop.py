@@ -79,12 +79,23 @@ async def auth_user(request: Request, initData: str = Form(...), session: AsyncS
         raise HTTPException(status_code=500, detail="Failed to load user")
 
     request.session["shop_user_id"] = user.id
+    request.session["shop_telegram_id"] = tg_id
+    request.session["shop_init_data"] = initData
     return {"status": "ok"}
 
 async def get_shop_user(request: Request, session: AsyncSession = Depends(get_db)):
     user_id = request.session.get("shop_user_id")
+    init_data = request.session.get("shop_init_data")
+    session_telegram_id = request.session.get("shop_telegram_id")
     
-    if not user_id:
+    if not user_id or not init_data or not session_telegram_id:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    tg_user = check_telegram_auth(init_data)
+    if not tg_user or tg_user.get("id") != session_telegram_id:
+        request.session.pop("shop_user_id", None)
+        request.session.pop("shop_telegram_id", None)
+        request.session.pop("shop_init_data", None)
         raise HTTPException(status_code=401, detail="Unauthorized")
     
     
@@ -97,7 +108,10 @@ async def get_shop_user(request: Request, session: AsyncSession = Depends(get_db
     stmt = select(User).options(selectinload(User.addresses)).where(User.id == user_id)
     user = (await session.execute(stmt)).scalar_one_or_none()
     
-    if not user:
+    if not user or user.telegram_id != session_telegram_id:
+         request.session.pop("shop_user_id", None)
+         request.session.pop("shop_telegram_id", None)
+         request.session.pop("shop_init_data", None)
          raise HTTPException(status_code=401, detail="User not found")
          
     return user
@@ -170,10 +184,19 @@ async def add_to_cart(product_id: int, user: User = Depends(get_shop_user), sess
         # Atomic update to prevent race conditions
         stmt_update = (
             update(CartItem)
-            .where(CartItem.id == existing.id)
+            .where(
+                CartItem.id == existing.id,
+                CartItem.quantity == existing.quantity,
+            )
             .values(quantity=CartItem.quantity + 1)
         )
-        await session.execute(stmt_update)
+        result = await session.execute(stmt_update)
+        if result.rowcount == 0:
+            await session.rollback()
+            return JSONResponse(
+                {"success": False, "message": "повторите попытку"},
+                status_code=409,
+            )
     else:
         session.add(CartItem(user_id=user.id, product_id=product_id, quantity=1))
         
@@ -206,8 +229,21 @@ async def update_cart_qty(item_id: int, qty: int, user: User = Depends(get_shop_
              return JSONResponse({"success": False, "message": "Not enough stock"}, status_code=400)
         
         # Atomic update
-        stmt = update(CartItem).where(CartItem.id == item_id).values(quantity=qty)
-        await session.execute(stmt)
+        stmt = (
+            update(CartItem)
+            .where(
+                CartItem.id == item_id,
+                CartItem.quantity == item.quantity,
+            )
+            .values(quantity=qty)
+        )
+        result = await session.execute(stmt)
+        if result.rowcount == 0:
+            await session.rollback()
+            return JSONResponse(
+                {"success": False, "message": "повторите попытку"},
+                status_code=409,
+            )
         await session.commit()
     return {"success": True}
 
