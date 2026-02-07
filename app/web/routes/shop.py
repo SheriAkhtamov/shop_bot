@@ -426,11 +426,6 @@ async def create_debt_payment(
          
     if amount <= 0:
         raise HTTPException(status_code=400, detail="Сумма заказа должна быть больше нуля")
-    if amount < settings.MIN_ORDER_AMOUNT:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Минимальная сумма заказа — {settings.MIN_ORDER_AMOUNT} сум",
-        )
 
     # Проверка суммы погашения (нельзя оплатить больше, чем долг)
     if user.debt and amount > user.debt:
