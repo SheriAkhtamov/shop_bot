@@ -190,10 +190,16 @@ async function updateCartQuantity(cartId, change) {
         updateCheckoutButtonState();
         try {
             const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            await fetch(`/shop/api/cart/update/${cartId}?qty=${newQty}`, {
+            const response = await fetch(`/shop/api/cart/update/${cartId}?qty=${newQty}`, {
                 method: 'POST',
                 headers: { 'X-CSRF-Token': csrfToken }
             });
+            const result = await response.json();
+            if (result.success === false) {
+                qtyElem.innerText = currentQty;
+                calculateTotal();
+                showToast(result.message || "Ошибка обновления", 'error');
+            }
             delete cartDebounceTimers[cartId];
         } catch (e) {
             // Revert on error (not perfect but safe)
