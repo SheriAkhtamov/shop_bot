@@ -21,9 +21,9 @@ class OrderCreateSchema(FormSchema):
         if len(v) == 9:
             v = "998" + v
         
-        # Check format strict: 998 + 9 digits
-        if not re.match(r"^998\d{9}$", v):
-             raise ValueError("Неверный формат телефона. Введите номер в формате 998XXXXXXXXX")
+        # Accept international formats (9-15 digits after cleanup)
+        if len(v) < 9 or len(v) > 15:
+            raise ValueError("Неверный формат телефона. Введите номер в международном формате")
         return v
 
     @validator("address")

@@ -96,7 +96,7 @@ app.add_middleware(
     SessionMiddleware, 
     secret_key=settings.BOT_TOKEN, 
     max_age=86400 * 30, # Сессия живет 30 дней
-    https_only=False,    # Включаем Secure
+    https_only=True,    # Включаем Secure (требуется HTTPS)
     same_site='lax'    # Разрешаем cross-site запросы (важно для WebApp)
 )
 

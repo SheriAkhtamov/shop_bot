@@ -104,4 +104,13 @@
     }
 </script>
 {% endif %}
+{% if removed_inactive %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (typeof showToast === 'function') {
+            showToast('Некоторые товары были удалены, так как они недоступны', 'info');
+        }
+    });
+</script>
+{% endif %}
 {% endblock %}

@@ -2,6 +2,7 @@ from typing import Optional
 from fastapi import Form, UploadFile, File
 from pydantic import BaseModel, Field
 from .base import FormSchema
+from app.config import settings
 
 class ProductCreateSchema(FormSchema):
     name_ru: str = Field(..., min_length=2)
@@ -12,7 +13,7 @@ class ProductCreateSchema(FormSchema):
     description_ru: Optional[str] = ""
     description_uz: Optional[str] = ""
     ikpu: Optional[str] = "00702001001000001"
-    package_code: Optional[str] = "123456"
+    package_code: Optional[str] = settings.DEFAULT_PACKAGE_CODE
     
     # Image is handled separately via File(), but we can include it in the model info if needed.
     # For now, we keep it separate in the Depends because it's UploadFile
@@ -28,7 +29,7 @@ class ProductCreateSchema(FormSchema):
         description_ru: str = Form(""),
         description_uz: str = Form(""),
         ikpu: str = Form("00702001001000001"),
-        package_code: str = Form("123456"),
+        package_code: str = Form(settings.DEFAULT_PACKAGE_CODE),
     ):
         return cls(
             name_ru=name_ru,

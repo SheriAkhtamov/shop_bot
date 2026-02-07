@@ -171,7 +171,7 @@ class ClickService:
                 items_list.append({
                     "spic": item.product.ikpu if item.product and item.product.ikpu else "00702001001000001", # ИКПУ
                     "title": item.product_name,
-                    "package_code": item.product.package_code if item.product and item.product.package_code else "123456",
+                    "package_code": item.product.package_code if item.product and item.product.package_code else settings.DEFAULT_PACKAGE_CODE,
                     "price": int(item.price_at_purchase) * 100, # В документации Click сумма items не всегда в тийинах, но обычно API работают с минимальными единицами. Проверим доку: "price: цена...". В Click обычно сумы. НО! Payme в тийинах. 
                     # ВАЖНО: В PDF Click написано "price: * uint64". И пример 505000. Это похоже на сумы или тийины? 
                     # В примере "amount": 1000. В "submit_items" price 505000. Скорее всего в сумах. 
@@ -196,7 +196,7 @@ class ClickService:
              items_list.append({
                 "spic": "00702001001000001",
                 "title": "Погашение долга",
-                "package_code": "123456",
+                "package_code": settings.DEFAULT_PACKAGE_CODE,
                 "price": int(order.total_amount) * 100,
                 "amount": 1,
                 "units": 241092,

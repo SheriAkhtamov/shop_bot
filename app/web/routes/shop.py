@@ -173,14 +173,20 @@ async def view_cart(request: Request, user: User = Depends(get_shop_user), sessi
     # Logic to handle ghost items
     final_items = []
     items_to_delete = []
+    removed_inactive = False
     
     for item in cart_items:
         if not item.product:
             items_to_delete.append(item)
+            removed_inactive = True
         else:
-            # Monkey-patch unavailable flag for template
-            item.unavailable = not item.product.is_active
-            final_items.append(item)
+            if not item.product.is_active:
+                items_to_delete.append(item)
+                removed_inactive = True
+            else:
+                # Monkey-patch unavailable flag for template
+                item.unavailable = item.product.stock <= 0
+                final_items.append(item)
             
     if items_to_delete:
         for i in items_to_delete:
@@ -188,7 +194,16 @@ async def view_cart(request: Request, user: User = Depends(get_shop_user), sessi
         await session.commit()
     
     csrf_token = generate_csrf_token(request)
-    return templates.TemplateResponse("shop/cart.html", {"request": request, "user": user, "cart_items": final_items, "csrf_token": csrf_token})
+    return templates.TemplateResponse(
+        "shop/cart.html",
+        {
+            "request": request,
+            "user": user,
+            "cart_items": final_items,
+            "csrf_token": csrf_token,
+            "removed_inactive": removed_inactive,
+        },
+    )
 
 @router.post("/api/cart/add/{product_id}", dependencies=[Depends(validate_csrf_header)])
 async def add_to_cart(product_id: int, user: User = Depends(get_shop_user), session: AsyncSession = Depends(get_db)):

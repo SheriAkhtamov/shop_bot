@@ -44,6 +44,8 @@ class Settings:
     PAYME_MIN_AMOUNT = 100000 
     ORDER_PAYMENT_TIMEOUT_MINUTES = 20
     MIN_ORDER_AMOUNT = 100
+    # Код упаковки по умолчанию (без упаковки). При необходимости заменить на код из ОФД.
+    DEFAULT_PACKAGE_CODE = "000000"
 
     @property
     def DATABASE_URL(self):
