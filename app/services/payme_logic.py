@@ -453,6 +453,13 @@ class PaymeService:
                 "state": transaction.state
             }
 
+        # Запрет отмены подтвержденной транзакции без возврата
+        if transaction.state == 2:
+            raise PaymeException(
+                PaymeErrors.CANT_CANCEL,
+                {"ru": "Отмена оплаченной транзакции возможна только после подтвержденного возврата Payme"},
+            )
+
         # Отмена созданной (не оплаченной) транзакции
         if transaction.state == 1:
             transaction.state = -1
@@ -460,13 +467,6 @@ class PaymeService:
             transaction.cancel_time = datetime.utcnow()
             await OrderService.cancel_order(self.session, transaction.order_id, commit=False)
             await self.session.commit()
-        
-        # Отмена оплаченной транзакции (возврат средств)
-        elif transaction.state == 2:
-            raise PaymeException(
-                PaymeErrors.CANT_CANCEL,
-                {"ru": "Отмена оплаченной транзакции возможна только после подтвержденного возврата"},
-            )
             
         return {
             "cancel_time": int(transaction.cancel_time.timestamp() * 1000),
