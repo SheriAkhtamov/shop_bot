@@ -184,6 +184,7 @@ class PaymeService:
             order_id=order_id,
             state=1
         )
+        new_tx.order = order
         self.session.add(new_tx)
         await self.session.commit()
 
