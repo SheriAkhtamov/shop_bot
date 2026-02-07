@@ -195,65 +195,67 @@ class PaymeService:
                     await self.session.commit()
                     raise PaymeException(PaymeErrors.ALREADY_DONE, {"ru": "Таймаут транзакции"})
 
-            transaction.state = 2
-            transaction.perform_time = datetime.utcnow()
-            
             stmt_order = select(Order).options(selectinload(Order.user), selectinload(Order.items)).where(Order.id == transaction.order_id).with_for_update()
             order = (await self.session.execute(stmt_order)).scalar_one_or_none()
             
-            if order:
-                if order.status in {"paid", "done"}:
-                    return {
-                        "perform_time": int(transaction.perform_time.timestamp() * 1000) if transaction.perform_time else 0,
-                        "transaction": str(transaction.id),
-                        "state": transaction.state
-                    }
+            if not order:
+                raise PaymeException(PaymeErrors.ORDER_NOT_FOUND, {"ru": "Заказ не найден"})
 
-                user_locked = None
-                if order.order_type == "debt_repayment":
-                    stmt_user = select(User).where(User.id == order.user_id).with_for_update()
-                    user_locked = (await self.session.execute(stmt_user)).scalar_one_or_none()
-                    current_debt = user_locked.debt if user_locked and user_locked.debt is not None else 0
-                    if order.total_amount > current_debt:
-                        raise PaymeException(
-                            PaymeErrors.INVALID_AMOUNT,
-                            {"ru": "Сумма превышает текущий долг"},
-                        )
+            transaction.state = 2
+            transaction.perform_time = datetime.utcnow()
 
-                order.status = "paid"
-                order.payment_method = "card"
+            if order.status in {"paid", "done"}:
+                return {
+                    "perform_time": int(transaction.perform_time.timestamp() * 1000) if transaction.perform_time else 0,
+                    "transaction": str(transaction.id),
+                    "state": transaction.state
+                }
 
-                # Reduce cart quantities only for items included in this order.
-                # This avoids wiping out newer cart additions made after order creation.
-                from collections import defaultdict
-                from app.database.models import CartItem
-
-                ordered_quantities = defaultdict(int)
-                for item in order.items:
-                    if item.product_id:
-                        ordered_quantities[item.product_id] += item.quantity
-
-                if ordered_quantities:
-                    cart_stmt = (
-                        select(CartItem)
-                        .where(
-                            CartItem.user_id == order.user_id,
-                            CartItem.product_id.in_(ordered_quantities.keys()),
-                        )
-                        .order_by(CartItem.id)
-                        .with_for_update()
+            user_locked = None
+            if order.order_type == "debt_repayment":
+                stmt_user = select(User).where(User.id == order.user_id).with_for_update()
+                user_locked = (await self.session.execute(stmt_user)).scalar_one_or_none()
+                current_debt = user_locked.debt if user_locked and user_locked.debt is not None else 0
+                if order.total_amount > current_debt:
+                    raise PaymeException(
+                        PaymeErrors.INVALID_AMOUNT,
+                        {"ru": "Сумма превышает текущий долг"},
                     )
-                    cart_items = (await self.session.execute(cart_stmt)).scalars().all()
-                    for cart_item in cart_items:
-                        remaining = ordered_quantities.get(cart_item.product_id, 0)
-                        if remaining <= 0:
-                            continue
-                        if cart_item.quantity > remaining:
-                            cart_item.quantity -= remaining
-                            ordered_quantities[cart_item.product_id] = 0
-                        else:
-                            ordered_quantities[cart_item.product_id] = remaining - cart_item.quantity
-                            await self.session.delete(cart_item)
+
+            order.status = "paid"
+            order.payment_method = "card"
+
+            # Reduce cart quantities only for items included in this order.
+            # This avoids wiping out newer cart additions made after order creation.
+            from collections import defaultdict
+            from app.database.models import CartItem
+
+            ordered_quantities = defaultdict(int)
+            for item in order.items:
+                if item.product_id:
+                    ordered_quantities[item.product_id] += item.quantity
+
+            if ordered_quantities:
+                cart_stmt = (
+                    select(CartItem)
+                    .where(
+                        CartItem.user_id == order.user_id,
+                        CartItem.product_id.in_(ordered_quantities.keys()),
+                    )
+                    .order_by(CartItem.id)
+                    .with_for_update()
+                )
+                cart_items = (await self.session.execute(cart_stmt)).scalars().all()
+                for cart_item in cart_items:
+                    remaining = ordered_quantities.get(cart_item.product_id, 0)
+                    if remaining <= 0:
+                        continue
+                    if cart_item.quantity > remaining:
+                        cart_item.quantity -= remaining
+                        ordered_quantities[cart_item.product_id] = 0
+                    else:
+                        ordered_quantities[cart_item.product_id] = remaining - cart_item.quantity
+                        await self.session.delete(cart_item)
 
                  # ЛОГИКА ПОГАШЕНИЯ ДОЛГА
                 if order.order_type == "debt_repayment":
