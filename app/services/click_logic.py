@@ -344,6 +344,11 @@ class ClickService:
                     "error": ClickErrors.ERROR_IN_REQUEST,
                     "error_note": "Transaction merchant_trans_id mismatch",
                 }
+            if order.status == "cancelled":
+                return {
+                    "error": ClickErrors.TRANSACTION_CANCELLED,
+                    "error_note": "Transaction cancelled",
+                }
             return {
                 "click_trans_id": click_trans_id,
                 "merchant_trans_id": merchant_trans_id,
