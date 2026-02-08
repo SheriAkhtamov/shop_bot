@@ -2,10 +2,10 @@ import asyncio
 from datetime import datetime, timedelta
 from app.utils.logger import logger
 
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.orm import selectinload
 from app.database.core import async_session_maker
-from app.database.models import Order, PaymeTransaction, OrderItem
+from app.database.models import Order, PaymeTransaction, OrderItem, OrderRateLimit
 from app.services.order_service import OrderService
 
 # logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -78,6 +78,17 @@ async def cleanup_zombie_orders():
 
             except Exception as e:
                 logger.exception(f"Ошибка в cleanup_zombie_orders: {e}")
+
+            try:
+                async with async_session_maker() as session:
+                    await session.execute(
+                        delete(OrderRateLimit).where(
+                            OrderRateLimit.expires_at < datetime.utcnow()
+                        )
+                    )
+                    await session.commit()
+            except Exception as e:
+                logger.exception(f"Ошибка очистки OrderRateLimit: {e}")
 
             await asyncio.sleep(60) # Проверка каждую минуту
     except Exception:

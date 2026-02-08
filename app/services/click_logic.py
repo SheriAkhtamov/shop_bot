@@ -165,15 +165,16 @@ class ClickService:
                     )
                     return None
                 expected_total += int(item.price_at_purchase) * int(item.quantity)
+                package_code = settings.DEFAULT_PACKAGE_CODE
+                if item.product and item.product.package_code is not None:
+                    package_code = item.product.package_code
                 items_list.append(
                     {
                         "spic": item.product.ikpu
                         if item.product and item.product.ikpu
                         else "00702001001000001",  # ИКПУ
                         "title": item.product_name,
-                        "package_code": str(item.product.package_code)
-                        if item.product and item.product.package_code is not None
-                        else str(settings.DEFAULT_PACKAGE_CODE),
+                        "package_code": str(package_code),
                         "price": int(item.price_at_purchase)
                         * 100,  # В документации Click сумма items не всегда в тийинах, но обычно API работают с минимальными единицами. Проверим доку: "price: цена...". В Click обычно сумы. НО! Payme в тийинах.
                         # ВАЖНО: В PDF Click написано "price: * uint64". И пример 505000. Это похоже на сумы или тийины?
