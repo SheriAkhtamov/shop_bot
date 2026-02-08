@@ -350,6 +350,18 @@ async def checkout_page(request: Request, items: List[int] = Query(None), user: 
             await session.delete(item)
         await session.commit()
         return RedirectResponse("/shop/cart", status_code=303)
+    stock_adjusted = False
+    for item in selected_items:
+        available_stock = item.product.stock if item.product and item.product.stock is not None else 0
+        if item.quantity > available_stock:
+            stock_adjusted = True
+            if available_stock <= 0:
+                await session.delete(item)
+            else:
+                item.quantity = available_stock
+    if stock_adjusted:
+        await session.commit()
+        return RedirectResponse("/shop/cart", status_code=303)
     total_amount = sum(item.product.price * item.quantity for item in selected_items)
     total_count = sum(item.quantity for item in selected_items)
     csrf_token = generate_csrf_token(request)
