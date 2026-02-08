@@ -27,6 +27,7 @@ services:
     volumes:
       - .:/app
       - media_data:/app/media
+      - ./logs:/app/logs
     # ВАЖНО: Убираем ports, чтобы порт 8000 не торчал наружу. 
     # Nginx будет обращаться к нему внутри сети.
     expose:
@@ -42,6 +43,7 @@ services:
     command: python -m scripts.cleanup
     volumes:
       - .:/app
+      - ./logs:/app/logs
     depends_on:
       db:
         condition: service_healthy

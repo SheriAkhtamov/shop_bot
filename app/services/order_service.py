@@ -1,4 +1,5 @@
 from typing import List, Optional, Dict, Any
+import asyncio
 from datetime import datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, func
@@ -229,7 +230,9 @@ class OrderService:
             try:
                 msg = f"💳 <b>Заказ #{new_order.id} создан!</b>\nОжидаем оплату: {total_amount} сум."
                 if user.telegram_id:
-                    await bot.send_message(user.telegram_id, msg, parse_mode="HTML")
+                    asyncio.create_task(
+                        bot.send_message(user.telegram_id, msg, parse_mode="HTML")
+                    )
             except Exception:
                 logger.exception("Failed to send payme notification")
             return {"status": "redirect", "url": payme_url}
@@ -239,7 +242,9 @@ class OrderService:
             try:
                 msg = f"✅ <b>Заказ #{new_order.id} принят!</b>\n💰 {total_amount} сум\n📍 {final_address}\nОплата наличными при получении."
                 if user.telegram_id:
-                    await bot.send_message(user.telegram_id, msg, parse_mode="HTML")
+                    asyncio.create_task(
+                        bot.send_message(user.telegram_id, msg, parse_mode="HTML")
+                    )
             except Exception:
                 logger.exception("Failed to send order notification")
             return {"status": "success", "order_id": new_order.id}

@@ -83,6 +83,10 @@ class CartItem(Base):
     
     product: Mapped["Product"] = relationship(back_populates="cart_items")
 
+    __table_args__ = (
+        UniqueConstraint("user_id", "product_id", name="_user_product_cart_uc"),
+    )
+
 class Favorite(Base):
     __tablename__ = "favorites"
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -147,7 +151,7 @@ class PaymeTransaction(Base):
     # Payme присылает свой ID транзакции (длинная строка), он должен быть уникальным
     payme_id: Mapped[str] = mapped_column(String, unique=True, index=True) 
     time: Mapped[int] = mapped_column(BigInteger) # Время создания в Payme (timestamp ms)
-    amount: Mapped[int] = mapped_column(Integer) # Сумма в тийинах
+    amount: Mapped[int] = mapped_column(BigInteger) # Сумма в тийинах
     order_id: Mapped[int] = mapped_column(ForeignKey("orders.id"), index=True)
     
     # Состояние транзакции (по документации Payme):
