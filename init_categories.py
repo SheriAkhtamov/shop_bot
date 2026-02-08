@@ -21,17 +21,14 @@ async def init_cats():
     async with async_session_maker() as session:
         print("⏳ Проверка категорий...")
         
-        # Проверяем, пустая ли таблица категорий
-        stmt = select(Category).limit(1)
-        result = await session.execute(stmt)
-        if result.scalar_one_or_none():
-            print("✅ Категории уже инициализированы. Пропуск.")
-            return
-
         for cat_name in CATEGORIES_DATA:
+            stmt = select(Category.id).where(Category.name_ru == cat_name).limit(1)
+            result = await session.execute(stmt)
+            if result.scalar_one_or_none():
+                continue
             # Создаем новую
             # Пока ставим name_uz таким же, как name_ru (потом изменишь)
-            new_cat = Category(name_ru=cat_name, name_uz=cat_name) 
+            new_cat = Category(name_ru=cat_name, name_uz=cat_name)
             session.add(new_cat)
             print(f"➕ Добавлена категория: {cat_name}")
         
