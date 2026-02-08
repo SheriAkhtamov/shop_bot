@@ -5,7 +5,6 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 from contextlib import asynccontextmanager
 import asyncio
-import logging
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from datetime import datetime, timedelta, timezone
@@ -15,9 +14,7 @@ from app.web.routes import admin, shop, payme, click
 from app.database.core import engine, Base, async_session_maker
 from app.database.models import User
 from app.utils.security import get_password_hash, verify_password
-
-# Настройка логирования
-logging.basicConfig(level=logging.INFO)
+from app.utils.logger import logger
 
 async def create_default_admin():
     """Создает суперадмина admin/admin123, если его нет"""
@@ -31,7 +28,7 @@ async def create_default_admin():
             pwd_hash = get_password_hash(settings.SUPERADMIN_PASSWORD)
 
             if not admin:
-                logging.info(f"⚡ Суперадмин {settings.SUPERADMIN_LOGIN} не найден. Создаю...")
+                logger.info(f"⚡ Суперадмин {settings.SUPERADMIN_LOGIN} не найден. Создаю...")
                 
                 new_admin = User(
                     telegram_id=None,
@@ -43,7 +40,7 @@ async def create_default_admin():
                 )
                 session.add(new_admin)
                 await session.commit()
-                logging.info(f"✅ Суперадмин создан! Логин: {settings.SUPERADMIN_LOGIN}")
+                logger.info(f"✅ Суперадмин создан! Логин: {settings.SUPERADMIN_LOGIN}")
             else:
                 # Обновляем пароль только если разрешено в настройках
                 if not verify_password(settings.SUPERADMIN_PASSWORD, admin.password_hash):
@@ -51,25 +48,25 @@ async def create_default_admin():
                         admin.password_hash = pwd_hash
                         session.add(admin)
                         await session.commit()
-                        logging.info(
+                        logger.info(
                             f"🔄 Пароль суперадмина {settings.SUPERADMIN_LOGIN} обновлен из конфига."
                         )
                     else:
-                        logging.warning(
+                        logger.warning(
                             "⚠️ Пароль суперадмина отличается от конфига, "
                             "но SYNC_SUPERADMIN_PASSWORD выключен — "
                             "автоматическое обновление не выполнено."
                         )
                 else:
-                    logging.info(f"✅ Суперадмин {settings.SUPERADMIN_LOGIN} уже существует и актуален.")
+                    logger.info(f"✅ Суперадмин {settings.SUPERADMIN_LOGIN} уже существует и актуален.")
                 
         except Exception as e:
-            logging.error(f"Ошибка создания админа: {e}")
+            logger.error(f"Ошибка создания админа: {e}")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    logging.info("🚀 Запуск приложения...")
+    logger.info("🚀 Запуск приложения...")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     
@@ -82,19 +79,17 @@ async def lifespan(app: FastAPI):
     yield
     
     # Shutdown
-    logging.info("🛑 Остановка приложения...")
+    logger.info("🛑 Остановка приложения...")
     await engine.dispose()
-    logging.info("Bye!")
+    logger.info("Bye!")
 
 app = FastAPI(title="Shop MiniApp", lifespan=lifespan)
 
 
 # ВАЖНО: Подключаем сессии. 
-# В качестве секретного ключа используем BOT_TOKEN (так как он уникален и скрыт),
-# либо можно задать отдельный ключ в конфиге.
 app.add_middleware(
     SessionMiddleware, 
-    secret_key=settings.BOT_TOKEN, 
+    secret_key=settings.SECRET_KEY, 
     max_age=86400 * 30, # Сессия живет 30 дней
     https_only=True,    # Включаем Secure (требуется HTTPS)
     same_site='lax'    # Разрешаем cross-site запросы (важно для WebApp)

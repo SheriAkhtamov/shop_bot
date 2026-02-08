@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import time
 from datetime import datetime, timedelta
 from sqlalchemy import select, text
@@ -11,8 +10,7 @@ from app.config import settings
 from app.bot.loader import bot
 from app.services.order_service import OrderService
 from app.utils.money import normalize_amount
-
-logger = logging.getLogger(__name__)
+from app.utils.logger import logger
 
 class PaymeErrors:
     INSUFFICIENT_PRIVILEGE = -32504

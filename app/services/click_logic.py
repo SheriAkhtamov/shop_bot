@@ -11,9 +11,7 @@ from app.config import settings
 from app.bot.loader import bot
 from app.services.order_service import OrderService
 from app.utils.money import normalize_amount
-import logging
-
-logger = logging.getLogger(__name__)
+from app.utils.logger import logger
 
 class ClickErrors:
     SUCCESS = 0
