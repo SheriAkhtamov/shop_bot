@@ -273,13 +273,7 @@ class OrderService:
         if order.order_type == "product":
             for item in order.items:
                 if item.product_id:
-                    if item.stock_before_order is None:
-                        new_stock_value = Product.stock + item.quantity
-                    else:
-                        new_stock_value = func.greatest(
-                            Product.stock,
-                            func.least(Product.stock + item.quantity, item.stock_before_order),
-                        )
+                    new_stock_value = Product.stock + item.quantity
                     await session.execute(
                         update(Product)
                         .where(Product.id == item.product_id)
