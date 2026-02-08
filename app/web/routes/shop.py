@@ -7,6 +7,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_, update, insert
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
 from app.database.core import get_db
@@ -213,33 +214,51 @@ async def add_to_cart(product_id: int, user: User = Depends(get_shop_user), sess
          return JSONResponse({"success": False, "message": "Out of stock"}, status_code=400)
 
     cart_repo = CartRepository(session)
-    existing = await cart_repo.get_item(user.id, product_id)
-    
-    if existing:
-        # Проверяем, не превышает ли лимит на складе
-        if existing.quantity >= product.stock:
-            return JSONResponse({"success": False, "message": "Больше нет в наличии"}, status_code=400)
-        
-        # Atomic update to prevent race conditions
-        stmt_update = (
-            update(CartItem)
-            .where(
-                CartItem.id == existing.id,
-                CartItem.quantity == existing.quantity,
+    try:
+        existing = await cart_repo.get_item(user.id, product_id)
+
+        if existing:
+            # Проверяем, не превышает ли лимит на складе
+            if existing.quantity >= product.stock:
+                return JSONResponse(
+                    {"success": False, "message": "Больше нет в наличии"},
+                    status_code=400,
+                )
+
+            # Atomic update to prevent race conditions
+            stmt_update = (
+                update(CartItem)
+                .where(
+                    CartItem.id == existing.id,
+                    CartItem.quantity == existing.quantity,
+                )
+                .values(quantity=CartItem.quantity + 1)
             )
-            .values(quantity=CartItem.quantity + 1)
-        )
-        result = await session.execute(stmt_update)
-        if result.rowcount == 0:
-            await session.rollback()
-            return JSONResponse(
-                {"success": False, "message": "повторите попытку"},
-                status_code=409,
+            result = await session.execute(stmt_update)
+            if result.rowcount == 0:
+                await session.rollback()
+                return JSONResponse(
+                    {"success": False, "message": "повторите попытку"},
+                    status_code=409,
+                )
+        else:
+            session.add(CartItem(user_id=user.id, product_id=product_id, quantity=1))
+
+        await session.commit()
+    except IntegrityError:
+        await session.rollback()
+        existing = await cart_repo.get_item(user.id, product_id)
+        if existing and existing.quantity < product.stock:
+            stmt_update = (
+                update(CartItem)
+                .where(
+                    CartItem.id == existing.id,
+                    CartItem.quantity == existing.quantity,
+                )
+                .values(quantity=CartItem.quantity + 1)
             )
-    else:
-        session.add(CartItem(user_id=user.id, product_id=product_id, quantity=1))
-        
-    await session.commit()
+            await session.execute(stmt_update)
+            await session.commit()
     count_stmt = select(CartItem).where(CartItem.user_id == user.id)
     items = (await session.execute(count_stmt)).scalars().all()
     return {"success": True, "total_count": sum(i.quantity for i in items)}
@@ -343,7 +362,11 @@ async def checkout_page(request: Request, items: List[int] = Query(None), user: 
     if not selected_items: return RedirectResponse("/shop/cart")
     if len(selected_items) != len(normalized_items):
         return RedirectResponse("/shop/cart", status_code=303)
-    unavailable_items = [item for item in selected_items if not item.product]
+    unavailable_items = [
+        item
+        for item in selected_items
+        if not item.product or not item.product.is_active
+    ]
     if unavailable_items:
         for item in unavailable_items:
             await session.delete(item)

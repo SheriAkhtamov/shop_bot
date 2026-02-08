@@ -781,7 +781,9 @@ async def order_change_status(
 
         if status_text and order.user.telegram_id:
             try:
-                await bot.send_message(order.user.telegram_id, status_text)
+                asyncio.create_task(
+                    bot.send_message(order.user.telegram_id, status_text)
+                )
             except Exception:
                 # Пользователь мог заблокировать бота — игнорируем
                 logger.opt(exception=True).info("Failed to notify user about order status")

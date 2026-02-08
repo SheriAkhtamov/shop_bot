@@ -24,7 +24,8 @@ class ProductRepository(BaseRepository[Product]):
         
         stmt = select(Product).where(
             Product.is_active == True, 
-            (Product.name_ru.ilike(f"%{safe_query}%")) | (Product.name_uz.ilike(f"%{safe_query}%"))
+            (Product.name_ru.ilike(f"%{safe_query}%", escape="\\")) 
+            | (Product.name_uz.ilike(f"%{safe_query}%", escape="\\"))
         )
         return (await self.session.execute(stmt)).scalars().all()
 
