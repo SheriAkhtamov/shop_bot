@@ -1,5 +1,4 @@
 from typing import List, Optional, Dict, Any
-import logging
 from datetime import datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, func
@@ -12,8 +11,7 @@ from app.web.schemas.orders import OrderCreateSchema
 from app.database.repositories.cart import CartRepository
 from app.bot.loader import bot
 from app.utils.payment import generate_payme_link
-
-logger = logging.getLogger(__name__)
+from app.utils.logger import logger
 
 class OrderService:
     @staticmethod

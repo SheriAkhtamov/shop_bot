@@ -1,6 +1,4 @@
 import base64
-import logging
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Header
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
@@ -10,11 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database.core import get_db
 from app.config import settings
 from app.services.payme_logic import PaymeService, PaymeException, PaymeErrors
+from app.utils.logger import logger
 
 router = APIRouter(prefix="/api/payme", tags=["payme"])
-
-# Настраиваем логирование, чтобы видеть запросы от Payme
-logger = logging.getLogger("payme")
 
 # --- ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ: Генерация ссылки ---
 # Вынесена в app/utils/payment.py

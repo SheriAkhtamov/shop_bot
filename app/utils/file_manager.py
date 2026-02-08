@@ -1,8 +1,6 @@
 import asyncio
 import os
-import logging
-
-logger = logging.getLogger(__name__)
+from app.utils.logger import logger
 
 async def delete_file(file_path: str):
     """

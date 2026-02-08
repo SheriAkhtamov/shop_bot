@@ -1,6 +1,5 @@
 from typing import List
 import asyncio
-import logging
 import re
 from datetime import datetime, timedelta
 from fastapi import APIRouter, Request, Depends, HTTPException, Query, Form
@@ -23,10 +22,10 @@ from app.database.repositories.users import UserRepository
 from app.database.repositories.products import ProductRepository
 from app.database.repositories.orders import OrderRepository
 from app.database.repositories.cart import CartRepository
+from app.utils.logger import logger
 
 router = APIRouter(prefix="/shop", tags=["shop"])
 templates = Jinja2Templates(directory="app/templates")
-logger = logging.getLogger(__name__)
 
 async def check_rate_limit(
     user_id: int,

@@ -123,8 +123,8 @@ class Order(Base):
 
     user: Mapped["User"] = relationship(back_populates="orders")
     items: Mapped[List["OrderItem"]] = relationship(back_populates="order")
-    # Связь с транзакцией Payme
-    payme_transaction: Mapped["PaymeTransaction"] = relationship(back_populates="order", uselist=False)
+    # Связь с транзакциями Payme (может быть несколько попыток оплаты)
+    payme_transactions: Mapped[List["PaymeTransaction"]] = relationship(back_populates="order")
 
 class OrderItem(Base):
     __tablename__ = "order_items"
@@ -163,7 +163,7 @@ class PaymeTransaction(Base):
     perform_time: Mapped[datetime] = mapped_column(DateTime, nullable=True) # Время подтверждения
     cancel_time: Mapped[datetime] = mapped_column(DateTime, nullable=True) # Время отмены
 
-    order: Mapped["Order"] = relationship(back_populates="payme_transaction")
+    order: Mapped["Order"] = relationship(back_populates="payme_transactions")
 
 # --- CLICK ТРАНЗАКЦИИ ---
 class ClickTransaction(Base):

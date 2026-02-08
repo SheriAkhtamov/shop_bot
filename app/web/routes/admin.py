@@ -1,7 +1,6 @@
 import os
 import uuid
 import asyncio
-import logging
 from typing import Optional, List
 from urllib.parse import quote, unquote
 
@@ -28,10 +27,10 @@ from app.database.repositories.users import UserRepository
 from app.database.repositories.products import ProductRepository
 from app.database.repositories.orders import OrderRepository
 from app.services.order_service import OrderService
+from app.utils.logger import logger
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 templates = Jinja2Templates(directory="app/templates")
-logger = logging.getLogger(__name__)
 
 IMAGE_MAX_SIZE = (1024, 1024)
 IMAGE_QUALITY = 85
@@ -627,7 +626,7 @@ async def orders_list(
     try:
         page = int(request.query_params.get("page", 1))
     except (TypeError, ValueError):
-        logger.debug("Invalid page param in orders list", exc_info=True)
+        logger.opt(exception=True).debug("Invalid page param in orders list")
     if page < 1:
         page = 1
     
@@ -785,7 +784,7 @@ async def order_change_status(
                 await bot.send_message(order.user.telegram_id, status_text)
             except Exception:
                 # Пользователь мог заблокировать бота — игнорируем
-                logger.info("Failed to notify user about order status", exc_info=True)
+                logger.opt(exception=True).info("Failed to notify user about order status")
 
     return RedirectResponse(f"/admin/orders/{order_id}", status_code=303)
 
@@ -961,7 +960,7 @@ async def perform_mailing(chat_ids: List[int], text: str, photo_bytes: Optional[
             await asyncio.sleep(0.05)
         except Exception as e:
             # Пользователь мог заблокировать бота
-            logger.info("Failed to send mailing message", exc_info=True)
+            logger.opt(exception=True).info("Failed to send mailing message")
 
 @router.get("/mailing", response_class=HTMLResponse)
 async def mailing_page(request: Request, user: User = Depends(get_current_admin)):
