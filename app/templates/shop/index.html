@@ -71,7 +71,7 @@
         {% set product_name = product.name_ru if user.language == 'ru' else product.name_uz %}
         {% set product_desc = product.description_ru if user.language == 'ru' else product.description_uz %}
         <div class="min-w-[160px] bg-white rounded-2xl shadow-coffee p-3 active:scale-95 transition-transform duration-200"
-            onclick="openProductModal('{{ product.id }}', '{{ product_name | e }}', '{{ product_desc | default('', true) | e }}', '{{ product.price }}', '{{ product.image_path }}', '{{ product.stock }}')">
+            onclick="openProductModal('{{ product.id }}', '{{ product_name | replace(\"'\", \"\\\\'\") | e }}', '{{ product_desc | default('', true) | replace(\"'\", \"\\\\'\") | e }}', '{{ product.price }}', '{{ product.image_path }}', '{{ product.stock }}')">
             <div
                 class="bg-[#F9F9F9] rounded-xl p-2 mb-3 h-32 flex items-center justify-center relative overflow-hidden">
                 {% if product.image_path %}
