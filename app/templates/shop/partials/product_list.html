@@ -19,8 +19,8 @@
     {% endif %}
 
     <!-- Clickable Area -->
-    <div
-        onclick="openProductModal('{{ product.id }}', '{{ product_name | replace(\"'\", \"\\\\'\") | e }}', '{{ product_desc | default('', true) | replace(\"'\", \"\\\\'\") | e }}', '{{ product.price }}', '{{ product.image_path }}', '{{ product.stock }}')">
+        <div
+    onclick="openProductModal('{{ product.id }}', '{{ product_name | replace('\'', '\\\'') | e }}', '{{ product_desc | default('', true) | replace('\'', '\\\'') | e }}', '{{ product.price }}', '{{ product.image_path }}', '{{ product.stock }}')">
         <div class="bg-[#F9F9F9] rounded-xl p-3 mb-3 h-32 flex items-center justify-center relative overflow-hidden">
             {% if product.image_path %}
                 <img src="{{ product.image_path }}" class="w-full h-full object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-110">

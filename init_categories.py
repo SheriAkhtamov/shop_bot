@@ -1,5 +1,5 @@
 import asyncio
-from sqlalchemy import insert
+from sqlalchemy.dialects.postgresql import insert
 from app.database.core import async_session_maker
 from app.database.models import Category
 

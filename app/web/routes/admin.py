@@ -3,6 +3,7 @@ import uuid
 import asyncio
 from typing import Optional, List
 from urllib.parse import quote, unquote
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Request, Form, Depends, UploadFile, File, BackgroundTasks
 from fastapi.responses import RedirectResponse, HTMLResponse
@@ -36,6 +37,16 @@ IMAGE_MAX_SIZE = (1024, 1024)
 IMAGE_QUALITY = 85
 IMAGE_FORMAT = "WEBP"
 IMAGE_EXTENSION = "webp"
+
+
+def format_datetime_uz(value, format="%d.%m.%Y %H:%M"):
+    if value is None:
+        return ""
+    # Добавляем 5 часов для UTC+5
+    local_dt = value + timedelta(hours=5)
+    return local_dt.strftime(format)
+
+templates.env.filters["datetime_uz"] = format_datetime_uz
 
 
 def process_product_image(file_bytes: bytes) -> bytes:

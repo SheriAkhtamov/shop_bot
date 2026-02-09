@@ -5,8 +5,8 @@
 <div class="sticky top-0 bg-[#F2E8DC]/90 backdrop-blur-md z-30 px-5 py-4 border-b border-white/20">
     <div class="flex justify-between items-center mb-4">
         <div>
-            <h1 class="text-2xl font-extrabold text-[#3E2310] tracking-tight">Caffeine.</h1>
-            <p class="text-xs text-[#8C735F] font-medium">Свежесть в каждой детали</p>
+            <h1 class="text-2xl font-extrabold text-[#3E2310] tracking-tight">UNICOM.</h1>
+            <p class="text-xs text-[#8C735F] font-medium">Упаковка и расходники</p>
         </div>
         <div class="flex space-x-3 text-sm font-bold bg-white/40 p-1.5 rounded-lg">
             <!-- Переключатель языка -->
@@ -20,25 +20,36 @@
     <div class="relative">
         <i class="fas fa-search absolute left-4 top-3.5 text-[#8C735F]"></i>
         <input type="text" oninput="searchProducts(this.value)"
-            placeholder="{% if user.language == 'ru' %}Найти кофе...{% else %}Qahva qidirish...{% endif %}"
+            placeholder="{% if user.language == 'ru' %}Поиск товаров...{% else %}Mahsulotlarni qidirish...{% endif %}"
             class="w-full bg-white/60 border border-[#E0CCB7] rounded-xl pl-11 pr-4 py-3 text-[#3E2310] placeholder-[#B09B8B] focus:outline-none focus:ring-2 focus:ring-[#6B3F1E]/20 focus:bg-white transition-all shadow-sm">
     </div>
 </div>
 
-<!-- Промо-блок -->
+<!-- Промо-блок (Адаптирован под упаковку) -->
 <div class="mt-6 px-5">
     <div class="promo-card">
-        <div>
-            <p class="text-xs uppercase tracking-widest text-[#D6C0AD] font-bold">Новинка недели</p>
-            <h2 class="text-2xl font-extrabold text-white mt-2">Caramel Cloud</h2>
-            <p class="text-sm text-white/80 mt-1">Легкий, мягкий и бархатный вкус.</p>
+        <div class="z-10 relative">
+            <p class="text-xs uppercase tracking-widest text-[#D6C0AD] font-bold">Лучшее предложение</p>
+            <h2 class="text-2xl font-extrabold text-white mt-2 leading-tight">Всё для<br>Вашего Бизнеса</h2>
+            <p class="text-sm text-white/80 mt-2">Стаканы, контейнеры и приборы<br>по оптовым ценам.</p>
         </div>
-        <div class="promo-badge">-15%</div>
+        <!-- Декоративный элемент (можно заменить на иконку коробки) -->
+        <div class="promo-badge absolute bottom-4 right-4">HoReCa</div>
     </div>
-    <div class="mt-4 grid grid-cols-3 gap-2 text-center text-[11px] font-bold text-[#3E2310]">
-        <div class="info-pill">⏱ 15-20 мин</div>
-        <div class="info-pill">🌿 100% арабика</div>
-        <div class="info-pill">⭐ 4.9/5</div>
+    <!-- Инфо-плашки -->
+    <div class="mt-4 grid grid-cols-3 gap-2 text-center text-[10px] font-bold text-[#3E2310]">
+        <div class="info-pill flex flex-col justify-center items-center">
+            <i class="fas fa-box-open mb-1 text-[#6B3F1E]"></i>
+            <span>В наличии</span>
+        </div>
+        <div class="info-pill flex flex-col justify-center items-center">
+            <i class="fas fa-leaf mb-1 text-green-600"></i>
+            <span>Эко-товары</span>
+        </div>
+        <div class="info-pill flex flex-col justify-center items-center">
+            <i class="fas fa-truck mb-1 text-blue-600"></i>
+            <span>Доставка</span>
+        </div>
     </div>
 </div>
 
@@ -48,7 +59,7 @@
         <button
             class="chip-button active"
             data-id="all" onclick="filterByCategory('all')">
-            ☕ Все
+            📦 Все
         </button>
         {% for cat in categories %}
         <button
@@ -61,24 +72,26 @@
 </div>
 
 <!-- Карусель товаров (Популярное) -->
+<!-- Если товаров мало, можно скрыть этот блок или оставить -->
 <div class="mt-8 px-5">
     <div class="flex justify-between items-end mb-4">
         <h2 class="text-xl font-extrabold text-[#3E2310]">🔥 Популярное</h2>
-        <span class="text-xs text-[#8C735F] font-semibold tracking-wide uppercase">Top Picks</span>
+        <span class="text-xs text-[#8C735F] font-semibold tracking-wide uppercase">Хиты продаж</span>
     </div>
     <div class="flex overflow-x-auto space-x-4 hide-scroll pb-6 -mx-5 px-5">
         {% for product in products[:5] %}
         {% set product_name = product.name_ru if user.language == 'ru' else product.name_uz %}
         {% set product_desc = product.description_ru if user.language == 'ru' else product.description_uz %}
         <div class="min-w-[160px] bg-white rounded-2xl shadow-coffee p-3 active:scale-95 transition-transform duration-200"
-            onclick="openProductModal('{{ product.id }}', '{{ product_name | replace(\"'\", \"\\\\'\") | e }}', '{{ product_desc | default('', true) | replace(\"'\", \"\\\\'\") | e }}', '{{ product.price }}', '{{ product.image_path }}', '{{ product.stock }}')">
+            onclick="openProductModal('{{ product.id }}', '{{ product_name | replace('\'', '\\\'') | e }}', '{{ product_desc | default('', true) | replace('\'', '\\\'') | e }}', '{{ product.price }}', '{{ product.image_path }}', '{{ product.stock }}')">
             <div
                 class="bg-[#F9F9F9] rounded-xl p-2 mb-3 h-32 flex items-center justify-center relative overflow-hidden">
                 {% if product.image_path %}
                 <img src="{{ product.image_path }}" class="w-full h-full object-contain mix-blend-multiply">
                 {% else %}
+                <!-- Заглушка: Коробка вместо кофе -->
                 <div class="text-[#D6C0AD] text-4xl opacity-50">
-                    <i class="fas fa-coffee"></i>
+                    <i class="fas fa-box"></i>
                 </div>
                 {% endif %}
             </div>
@@ -91,7 +104,7 @@
 
 <!-- Сетка всех товаров -->
 <div class="mt-2 px-5 pb-10">
-    <h2 class="text-xl font-extrabold text-[#3E2310] mb-4">Меню</h2>
+    <h2 class="text-xl font-extrabold text-[#3E2310] mb-4">Каталог</h2>
     <div id="products-grid" class="grid grid-cols-2 gap-4">
         {% include "shop/partials/product_list.html" %}
     </div>
@@ -112,7 +125,10 @@
 
         <div class="p-6 pt-2">
             <div class="bg-[#F9F9F9] rounded-2xl p-6 mb-6 flex justify-center items-center h-48">
-                <img id="modal-img" src="" class="h-full object-contain mix-blend-multiply drop-shadow-lg">
+                <img id="modal-img" src="" class="h-full object-contain mix-blend-multiply drop-shadow-lg" style="display:none;">
+                <div id="modal-placeholder" class="text-[#D6C0AD] text-6xl opacity-50">
+                    <i class="fas fa-box-open"></i>
+                </div>
             </div>
 
             <div class="mb-6">
@@ -127,12 +143,12 @@
 
             <div class="flex items-center justify-between mt-auto pt-4 border-t border-gray-100">
                 <div>
-                    <span class="text-xs text-[#8C735F] font-bold uppercase">Цена</span>
+                    <span class="text-xs text-[#8C735F] font-bold uppercase">Цена за шт.</span>
                     <p id="modal-price" class="text-2xl font-extrabold text-[#6B3F1E]"></p>
                 </div>
                 <button id="modal-add-btn"
-                    class="bg-[#4f46e5] text-white px-8 py-3.5 rounded-xl font-bold text-sm shadow-lg shadow-[#4f46e5]/30 active:scale-95 transition-transform flex items-center space-x-2">
-                    <i class="fas fa-shopping-bag"></i>
+                    class="bg-[#6B3F1E] text-white px-8 py-3.5 rounded-xl font-bold text-sm shadow-lg shadow-[#6B3F1E]/30 active:scale-95 transition-transform flex items-center space-x-2">
+                    <i class="fas fa-shopping-cart"></i>
                     <span>В корзину</span>
                 </button>
             </div>
@@ -148,25 +164,30 @@
 
         // Fill data
         let imgEl = document.getElementById('modal-img');
-        if (image) {
+        let placeholderEl = document.getElementById('modal-placeholder');
+        
+        if (image && image !== 'None' && image !== '') {
             imgEl.src = image;
             imgEl.style.display = 'block';
+            placeholderEl.style.display = 'none';
         } else {
-            imgEl.src = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxIiBoZWlnaHQ9IjEiPjwvc3ZnPg==";
+            imgEl.style.display = 'none';
+            placeholderEl.style.display = 'block';
         }
+        
         document.getElementById('modal-title').innerText = name;
-        document.getElementById('modal-desc').innerText = desc || '';
+        document.getElementById('modal-desc').innerText = desc || 'Описание отсутствует';
         document.getElementById('modal-price').innerText = price + " сум";
 
         let stockEl = document.getElementById('modal-stock');
         const addBtn = document.getElementById('modal-add-btn');
         if (stock > 0) {
-            stockEl.innerText = "В наличии";
+            stockEl.innerText = "В наличии: " + stock;
             stockEl.className = "px-2 py-0.5 bg-[#E6F4EA] text-[#1E8E3E] text-[10px] font-bold uppercase rounded-md tracking-wider";
             addBtn.disabled = false;
             addBtn.classList.remove('opacity-50', 'cursor-not-allowed');
         } else {
-            stockEl.innerText = "Нет";
+            stockEl.innerText = "Нет на складе";
             stockEl.className = "px-2 py-0.5 bg-red-100 text-red-600 text-[10px] font-bold uppercase rounded-md tracking-wider";
             addBtn.disabled = true;
             addBtn.classList.add('opacity-50', 'cursor-not-allowed');
@@ -181,7 +202,6 @@
 
         // Show
         modal.classList.remove('hidden');
-        // Small delay to allow display:block to apply before transform
         setTimeout(() => {
             sheet.classList.remove('translate-y-full');
         }, 10);
@@ -196,8 +216,7 @@
         sheet.classList.add('translate-y-full');
         setTimeout(() => {
             modal.classList.add('hidden');
-        }, 300); // Wait for transition
+        }, 300); 
     }
-
 </script>
 {% endblock %}

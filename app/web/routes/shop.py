@@ -6,9 +6,10 @@ from fastapi import APIRouter, Request, Depends, HTTPException, Query, Form
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_, update, insert, func
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
+from sqlalchemy import select, update, func, delete
 
 from app.database.core import get_db
 from app.database.models import User, Product, Category, CartItem, Order, OrderItem, UserAddress, Favorite, OrderRateLimit

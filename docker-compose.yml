@@ -28,13 +28,15 @@ services:
       - .:/app
       - media_data:/app/media
       - ./logs:/app/logs
-    # ВАЖНО: Убираем ports, чтобы порт 8000 не торчал наружу. 
-    # Nginx будет обращаться к нему внутри сети.
     expose:
       - "8000"
     depends_on:
       db:
         condition: service_healthy
+    environment:
+      - DB_HOST=db
+      # Убедись, что в app/config.py заданы SUPERADMIN_LOGIN и SUPERADMIN_PASSWORD
+      # При старте app сам создаст админа и категории
 
   scheduler:
     build: .
@@ -48,7 +50,6 @@ services:
       db:
         condition: service_healthy
 
-  # Новый сервис Nginx
   nginx:
     image: nginx:alpine
     container_name: shop_nginx
@@ -57,28 +58,18 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      # Первый запуск: используем HTTP-конфиг без SSL.
-      # После получения сертификатов можно заменить на default.conf.ssl_template.
-      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
-      # - ./nginx/default.conf.ssl_template:/etc/nginx/conf.d/default.conf
-      - .:/app  # Чтобы Nginx видел папки static и media
+      # 1. Берем наш новый конфиг и кладем его внутрь как основной
+      - ./nginx/shop_ssl.conf:/etc/nginx/conf.d/default.conf
+      
+      # 2. Берем твои готовые сертификаты и кладем их в папку ssl внутри Nginx
+      - ./final_certs:/etc/nginx/ssl:ro
+      
+      # 3. Прокидываем статику и медиа, чтобы Nginx мог их отдавать
+      - .:/app
       - media_data:/app/media
-      # Папки для SSL сертификатов (понадобятся позже)
-      - certbot_conf:/etc/letsencrypt
-      - certbot_www:/var/www/certbot
     depends_on:
       - app
-
-  # Сервис для получения SSL (Certbot)
-  certbot:
-    image: certbot/certbot
-    container_name: certbot
-    volumes:
-      - certbot_conf:/etc/letsencrypt
-      - certbot_www:/var/www/certbot
 
 volumes:
   postgres_data:
   media_data:
-  certbot_conf:
-  certbot_www:

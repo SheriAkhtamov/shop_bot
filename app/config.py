@@ -1,16 +1,16 @@
 class Settings:
     # --- НАСТРОЙКИ БОТА ---
-    SECRET_KEY = "dummy-secret-key-change-me-in-production"
+    SECRET_KEY = "7d4c9f1a2b3e4d5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f"
     BOT_TOKEN = "8459371332:AAFOJgNVwKID642txTq8tF7gDk5xfToUIvs"
     
     # ID админов в Telegram (кому придут уведомления о старте, если настроить)
     # Можешь вписать свой ID цифрами, например [12345678]
-    ADMIN_IDS = [] 
+    ADMIN_IDS = [7719402429] 
     
     # --- СУПЕРАДМИН ---
     SUPERADMIN_LOGIN = "unicom"
     SUPERADMIN_PASSWORD = "unicombotadmin2026"
-    SYNC_SUPERADMIN_PASSWORD = False
+    SYNC_SUPERADMIN_PASSWORD = True
 
     # --- НАСТРОЙКИ БД ---
     DB_USER = "postgres"
