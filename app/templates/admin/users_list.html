@@ -58,7 +58,7 @@
                     {% endif %}
                 </td>
                 <td class="py-3 px-6 text-center">
-                    <button onclick="openDebtModal('{{ user.id }}', '{{ user.username or '' }}', '{{ user.debt }}')" 
+                    <button onclick='openDebtModal({{ user.id|tojson }}, {{ (user.username or "")|tojson }}, {{ (user.debt or 0)|tojson }})' 
                             class="text-[#3E2310] hover:text-[#543116] font-bold border border-[#E0CCB7] rounded-xl px-3 py-1 text-xs hover:bg-[#F2E8DC]">
                         💰 Управлять долгом
                     </button>
