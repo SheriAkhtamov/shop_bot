@@ -13,30 +13,27 @@
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script> <!-- Иконки -->
     <style>
         :root {
-            --admin-bg: #f6f5f2;
-            --admin-surface: #ffffff;
-            --admin-ink: #1f1f1f;
-            --admin-muted: #6b6b6b;
-            --admin-accent: #5b3df5;
-            --admin-accent-2: #2dd4bf;
-            --admin-border: rgba(15, 23, 42, 0.08);
+            --admin-bg: #f2e8dc;
+            --admin-surface: #fcf9f5;
+            --admin-ink: #3e2310;
+            --admin-muted: #8c735f;
+            --admin-accent: #6b3f1e;
+            --admin-border: rgba(107, 63, 30, 0.12);
         }
 
         body {
             font-family: 'Manrope', sans-serif;
-            background: radial-gradient(circle at top right, rgba(91, 61, 245, 0.12), transparent 45%),
-                radial-gradient(circle at 10% 20%, rgba(45, 212, 191, 0.12), transparent 35%),
+            background:
+                radial-gradient(circle at 12% 8%, rgba(198, 169, 146, 0.35), transparent 45%),
+                radial-gradient(circle at 88% 2%, rgba(62, 35, 16, 0.08), transparent 40%),
+                url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E"),
                 var(--admin-bg);
             color: var(--admin-ink);
         }
 
         .sidebar {
-            background: linear-gradient(160deg, #0f172a 0%, #1e1b4b 45%, #2c1b5a 100%);
+            background: linear-gradient(170deg, #3e2310 0%, #4c2a14 55%, #2b170c 100%);
             border-right: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .sidebar {
-            background-color: #3E2310;
         }
 
         .sidebar-link {
@@ -47,21 +44,21 @@
 
         .sidebar-link:hover {
             color: #FFFFFF;
-            background-color: #543116;
+            background-color: rgba(84, 49, 22, 0.85);
         }
 
         .sidebar-link.active {
             color: #FFFFFF;
-            background-color: #543116;
-            border-left: 4px solid #6B3F1E;
+            background-color: rgba(84, 49, 22, 0.95);
+            border-left: 4px solid #C6A992;
         }
 
         /* Glassmorphism card utility */
         .glass-card {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(252, 249, 245, 0.95);
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 4px 6px -1px rgba(62, 35, 16, 0.1), 0 2px 4px -1px rgba(62, 35, 16, 0.06);
+            border: 1px solid rgba(107, 63, 30, 0.08);
+            box-shadow: 0 18px 35px rgba(62, 35, 16, 0.12);
         }
 
         .shadow-coffee {
@@ -78,15 +75,15 @@
         }
 
         .admin-card {
-            background: rgba(255, 255, 255, 0.92);
+            background: rgba(252, 249, 245, 0.92);
             border: 1px solid var(--admin-border);
             border-radius: 1.5rem;
-            box-shadow: 0 16px 35px rgba(15, 23, 42, 0.08);
+            box-shadow: 0 20px 45px rgba(62, 35, 16, 0.12);
         }
 
         .metric-chip {
-            background: rgba(91, 61, 245, 0.08);
-            color: #4338ca;
+            background: rgba(107, 63, 30, 0.12);
+            color: #6b3f1e;
             border-radius: 9999px;
             font-size: 0.7rem;
             font-weight: 700;
@@ -168,14 +165,14 @@
         <!-- Основной контент -->
         <div class="main-content flex-1 bg-transparent pb-24 md:pb-8 w-full md:ml-64 relative">
             <!-- Верхняя полоска (Мобильная) -->
-            <div class="bg-[#0f172a] md:hidden p-4 shadow-lg flex justify-between items-center text-white">
+            <div class="bg-[#3E2310] md:hidden p-4 shadow-lg flex justify-between items-center text-white">
                 <h1 class="font-bold text-lg">АДМИН-ПАНЕЛЬ</h1>
             </div>
 
             <div class="p-6 md:p-10">
                 <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                    <h3 class="text-3xl font-bold text-[#0f172a]">{% block header %}Панель управления{% endblock %}</h3>
-                    <div class="flex items-center gap-2 text-xs font-semibold text-[#64748b]">
+                    <h3 class="text-3xl font-bold text-[#3E2310]">{% block header %}Панель управления{% endblock %}</h3>
+                    <div class="flex items-center gap-2 text-xs font-semibold text-[#8C735F]">
                         <span class="px-3 py-1 rounded-full bg-white/70 border border-white">Умное управление</span>
                         <span class="px-3 py-1 rounded-full bg-white/70 border border-white">Живая аналитика</span>
                     </div>
