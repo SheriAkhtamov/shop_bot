@@ -66,10 +66,6 @@
     .pb-nav {
         padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
     }
-
-    .bottom-nav {
-        bottom: calc(92px + env(safe-area-inset-bottom, 0px));
-    }
     
     /* Для стеклянных панелей */
     .glass {
@@ -105,69 +101,5 @@
     }
     .chip-btn.active {
         @apply bg-[#3E2310] text-white border-[#3E2310] shadow-lg shadow-[#3E2310]/20;
-    }
-
-    .page-header {
-        background: rgba(242, 232, 220, 0.88);
-        backdrop-filter: blur(12px);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.55);
-    }
-
-    .card-surface {
-        background: var(--color-paper);
-        border: 1px solid rgba(107, 63, 30, 0.08);
-        border-radius: 1.5rem;
-        box-shadow: 0 18px 40px rgba(62, 35, 16, 0.12);
-    }
-
-    .card-muted {
-        background: rgba(252, 249, 245, 0.7);
-        border: 1px dashed rgba(107, 63, 30, 0.18);
-        border-radius: 1.5rem;
-    }
-
-    .btn-primary {
-        background: linear-gradient(135deg, #3E2310, #6B3F1E);
-        color: #ffffff;
-        border-radius: 1rem;
-        font-weight: 700;
-        box-shadow: 0 16px 30px rgba(62, 35, 16, 0.25);
-    }
-
-    .btn-secondary {
-        background: linear-gradient(135deg, #4A6B36, #5C7E44);
-        color: #ffffff;
-        border-radius: 1rem;
-        font-weight: 700;
-        box-shadow: 0 16px 30px rgba(74, 107, 54, 0.2);
-    }
-
-    .btn-outline {
-        border: 1px solid rgba(107, 63, 30, 0.2);
-        color: #6B3F1E;
-        border-radius: 1rem;
-        background: rgba(252, 249, 245, 0.8);
-    }
-
-    .input-surface {
-        background: rgba(252, 249, 245, 0.95);
-        border: 1px solid rgba(107, 63, 30, 0.14);
-        border-radius: 1rem;
-        color: #3E2310;
-    }
-
-    .pill {
-        border-radius: 9999px;
-        padding: 0.35rem 0.85rem;
-        font-weight: 700;
-        font-size: 0.7rem;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-    }
-
-    .product-card {
-        display: flex;
-        flex-direction: column;
-        min-height: 100%;
     }
 }

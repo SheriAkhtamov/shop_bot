@@ -23,6 +23,8 @@ class Settings:
     # HTTPS обязателен для Mini App.
     # Если настраиваешь на сервере с доменом:
     WEB_BASE_URL = "https://unicombot.uz"
+    # Secure-флаг для сессионных cookies (False для dev/HTTP окружений).
+    SESSION_HTTPS_ONLY = False
     
     # --- НАСТРОЙКИ PAYME (ОПЛАТА) ---
     PAYME_ID = "697b63129eccc7679b552de7"  

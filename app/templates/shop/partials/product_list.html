@@ -1,7 +1,7 @@
 {% for product in products %}
 {% set product_name = product.name_ru if user.language == 'ru' else product.name_uz %}
 {% set product_desc = product.description_ru if user.language == 'ru' else product.description_uz %}
-<div class="card-surface p-3 relative group active:scale-[0.98] transition-all duration-200 product-card">
+<div class="bg-white rounded-2xl shadow-coffee p-3 relative group active:scale-[0.98] transition-all duration-200 flex flex-col h-full">
     <!-- Like Button -->
     <button onclick="toggleFavorite(this, {{ product.id }}); event.stopPropagation();"
         class="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-white/80 backdrop-blur text-[#D6C0AD] hover:text-[#A33B20] hover:bg-[#FFEBE5] transition z-10 shadow-sm">
