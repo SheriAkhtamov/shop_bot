@@ -49,9 +49,10 @@
                 </td>
                 <td class="py-3 px-6 text-left">{{ user.phone or "-" }}</td>
                 <td class="py-3 px-6 text-center">
-                    {% if user.debt > 0 %}
+                    {% set debt_value = user.debt or 0 %}
+                    {% if debt_value > 0 %}
                     <span class="bg-red-200 text-red-600 py-1 px-3 rounded-full text-xs font-bold">
-                        {{ user.debt }}
+                        {{ debt_value }}
                     </span>
                     {% else %}
                     <span class="bg-green-200 text-green-600 py-1 px-3 rounded-full text-xs">Нет долгов</span>
