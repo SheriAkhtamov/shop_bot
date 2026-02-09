@@ -1,7 +1,7 @@
 {% for product in products %}
 {% set product_name = product.name_ru if user.language == 'ru' else product.name_uz %}
 {% set product_desc = product.description_ru if user.language == 'ru' else product.description_uz %}
-<div class="bg-white rounded-2xl shadow-coffee p-3 relative group active:scale-[0.98] transition-all duration-200">
+<div class="card-surface p-3 relative group active:scale-[0.98] transition-all duration-200 product-card">
     <!-- Like Button -->
     <button onclick="toggleFavorite(this, {{ product.id }}); event.stopPropagation();"
         class="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-white/80 backdrop-blur text-[#D6C0AD] hover:text-[#A33B20] hover:bg-[#FFEBE5] transition z-10 shadow-sm">
@@ -19,8 +19,8 @@
     {% endif %}
 
     <!-- Clickable Area -->
-        <div
-    onclick="openProductModal('{{ product.id }}', '{{ product_name | replace('\'', '\\\'') | e }}', '{{ product_desc | default('', true) | replace('\'', '\\\'') | e }}', '{{ product.price }}', '{{ product.image_path }}', '{{ product.stock }}')">
+    <div class="flex flex-col h-full"
+        onclick="openProductModal('{{ product.id }}', '{{ product_name | replace('\'', '\\\'') | e }}', '{{ product_desc | default('', true) | replace('\'', '\\\'') | e }}', '{{ product.price }}', '{{ product.image_path }}', '{{ product.stock }}')">
         <div class="bg-[#F9F9F9] rounded-xl p-3 mb-3 h-32 flex items-center justify-center relative overflow-hidden">
             {% if product.image_path %}
                 <img src="{{ product.image_path }}" class="w-full h-full object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-110">
@@ -34,11 +34,11 @@
         <h3 class="text-[13px] font-bold text-[#3E2310] leading-tight line-clamp-2 h-9 mb-1">
             {{ product_name }}
         </h3>
-        <p class="text-[10px] text-[#8C735F] line-clamp-2">
+        <p class="text-[10px] text-[#8C735F] line-clamp-2 flex-1">
             {{ product_desc or ' ' }}
         </p>
 
-        <div class="flex justify-between items-center mt-2">
+        <div class="flex justify-between items-center mt-3 pt-2 border-t border-[#F2E8DC]">
             <div class="flex flex-col">
                 <p class="text-[#6B3F1E] font-extrabold text-sm">{{ product.price }} сум</p>
                 <span class="text-[10px] text-[#B09B8B] font-semibold">За 1 шт</span>

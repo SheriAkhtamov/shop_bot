@@ -8,7 +8,7 @@
     <title>Shop MiniApp</title>
 
     <!-- Tailwind CSS (Local) -->
-    <link rel="stylesheet" href="/static/css/style.css?v=1.1">
+    <link rel="stylesheet" href="/static/css/style.css?v=1.2">
 
     <!-- Google Fonts: Manrope -->
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
@@ -22,19 +22,12 @@
 
     <style>
         :root {
-            --color-primary: #4f46e5;
-            --color-secondary: #22d3ee;
-            --color-bg: #f8fafc;
-            --color-text: #0f172a;
-            --color-muted: #64748b;
-        }
-
-        body {
-            font-family: 'Manrope', sans-serif;
-            background: radial-gradient(circle at top left, rgba(79, 70, 229, 0.12), transparent 45%),
-                radial-gradient(circle at 80% 10%, rgba(34, 211, 238, 0.15), transparent 40%),
-                var(--color-bg);
-            color: var(--color-text);
+            --color-espresso: #3E2310;
+            --color-foam: #F2E8DC;
+            --color-paper: #FCF9F5;
+            --color-caramel: #C6A992;
+            --color-accent: #6B3F1E;
+            --color-muted: #B09B8B;
         }
 
         /* Custom Scrollbar */
@@ -65,11 +58,11 @@
 
         /* Glassmorphism Utilities */
         .glass-panel {
-            background: rgba(242, 232, 220, 0.85);
-            /* #F2E8DC with opacity */
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-top: 1px solid rgba(255, 255, 255, 0.4);
+            background: rgba(252, 249, 245, 0.8);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-top: 1px solid rgba(255, 255, 255, 0.45);
+            box-shadow: 0 -16px 40px rgba(62, 35, 16, 0.12);
         }
 
         /* Hiding tap highlight on mobile */
@@ -78,31 +71,33 @@
         }
 
         .promo-card {
-            background: linear-gradient(135deg, rgba(107, 63, 30, 0.95), rgba(163, 59, 32, 0.85));
-            border-radius: 1.5rem;
-            padding: 1.5rem;
-            display: flex;
+            background: linear-gradient(140deg, rgba(62, 35, 16, 0.98), rgba(107, 63, 30, 0.92));
+            border-radius: 1.75rem;
+            padding: 1.6rem;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 1rem;
             align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 18px 40px rgba(62, 35, 16, 0.2);
+            box-shadow: 0 24px 50px rgba(62, 35, 16, 0.25);
             position: relative;
             overflow: hidden;
+            min-height: 160px;
         }
 
         .promo-card::after {
             content: "";
             position: absolute;
-            right: -40px;
-            top: -30px;
-            width: 140px;
-            height: 140px;
-            background: rgba(255, 255, 255, 0.12);
+            right: -30px;
+            top: -40px;
+            width: 150px;
+            height: 150px;
+            background: rgba(255, 255, 255, 0.14);
             border-radius: 50%;
         }
 
         .promo-badge {
-            background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.35);
+            background: rgba(255, 255, 255, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.3);
             color: #fff;
             font-weight: 800;
             padding: 0.45rem 0.8rem;
@@ -112,10 +107,11 @@
         }
 
         .info-pill {
-            background: #fff;
+            background: rgba(252, 249, 245, 0.95);
             border-radius: 999px;
-            padding: 0.5rem 0.75rem;
-            box-shadow: 0 10px 20px rgba(62, 35, 16, 0.08);
+            padding: 0.55rem 0.85rem;
+            box-shadow: 0 14px 28px rgba(62, 35, 16, 0.1);
+            border: 1px solid rgba(107, 63, 30, 0.08);
         }
 
         .shadow-coffee {
@@ -123,10 +119,10 @@
         }
 
         .chip-button {
-            background: #ffffffb3;
-            border: 1px solid #f5e7d8;
+            background: rgba(252, 249, 245, 0.8);
+            border: 1px solid rgba(107, 63, 30, 0.1);
             color: #8c735f;
-            padding: 0.6rem 1.2rem;
+            padding: 0.65rem 1.25rem;
             border-radius: 9999px;
             font-size: 0.85rem;
             font-weight: 700;
@@ -140,53 +136,64 @@
             border-color: #6b3f1e;
             box-shadow: 0 12px 24px rgba(107, 63, 30, 0.2);
         }
+
+        @media (max-width: 420px) {
+            .promo-card {
+                grid-template-columns: 1fr;
+            }
+
+            .promo-badge {
+                position: static;
+                justify-self: start;
+            }
+        }
     </style>
 </head>
 
-<body class="pb-24 select-none touch-pan-y antialiased">
+<body class="pb-nav pt-safe select-none touch-pan-y antialiased min-h-screen">
     <div class="fade-in">
         {% block content %}{% endblock %}
     </div>
 
     <!-- Bottom Navigation Bar (Glassmorphism) -->
-    <div class="fixed bottom-0 w-full glass-panel flex justify-around py-3 z-40 pb-safe shadow-glass">
+    <div class="fixed bottom-0 w-full glass-panel flex justify-around py-3 z-40 pb-safe">
 
         <a href="/shop" onclick="tg.HapticFeedback.impactOccurred('light')"
             class="nav-item flex flex-col items-center group transition duration-200">
-            <div class="p-1.5 rounded-xl group-hover:bg-white/50 transition">
-                <i class="fas fa-home text-xl mb-0.5 text-[#94a3b8] group-[.active]:text-[#4f46e5]"></i>
+            <div class="p-1.5 rounded-xl group-hover:bg-white/60 transition">
+                <i class="fas fa-home text-xl mb-0.5 text-[#B09B8B] group-[.active]:text-[#3E2310]"></i>
             </div>
             <!-- Active Dot Indicator -->
             <span
-                class="w-1 h-1 rounded-full bg-[#4f46e5] opacity-0 group-[.active]:opacity-100 transition-opacity"></span>
+                class="w-1 h-1 rounded-full bg-[#6B3F1E] opacity-0 group-[.active]:opacity-100 transition-opacity"></span>
         </a>
 
         <a href="/shop#categories" onclick="tg.HapticFeedback.impactOccurred('light')"
             class="nav-item flex flex-col items-center group transition duration-200">
-            <div class="p-1.5 rounded-xl group-hover:bg-white/50 transition">
-                <i class="fas fa-th-large text-xl mb-0.5 text-[#94a3b8]"></i>
+            <div class="p-1.5 rounded-xl group-hover:bg-white/60 transition">
+                <i class="fas fa-th-large text-xl mb-0.5 text-[#B09B8B]"></i>
             </div>
-            <span class="w-1 h-1 rounded-full bg-[#4f46e5] opacity-0 transition-opacity"></span>
+            <span class="w-1 h-1 rounded-full bg-[#6B3F1E] opacity-0 transition-opacity"></span>
         </a>
 
         <a href="/shop/cart" onclick="tg.HapticFeedback.impactOccurred('light')"
             class="nav-item flex flex-col items-center group transition duration-200 relative">
-            <div class="relative p-1.5 rounded-xl group-hover:bg-white/50 transition">
-                <i class="fas fa-shopping-bag text-xl mb-0.5 text-[#94a3b8] group-[.active]:text-[#4f46e5]"></i>
+            <div class="relative p-1.5 rounded-xl group-hover:bg-white/60 transition">
+                <i class="fas fa-shopping-bag text-xl mb-0.5 text-[#B09B8B] group-[.active]:text-[#3E2310]"></i>
                 <span id="cart-badge"
                     class="hidden absolute top-0 right-0 bg-[#ef4444] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-white">0</span>
             </div>
             <span
-                class="w-1 h-1 rounded-full bg-[#4f46e5] opacity-0 group-[.active]:opacity-100 transition-opacity"></span>
+                class="w-1 h-1 rounded-full bg-[#6B3F1E] opacity-0 group-[.active]:opacity-100 transition-opacity"></span>
         </a>
 
         <a href="/shop/profile" onclick="tg.HapticFeedback.impactOccurred('light')"
             class="nav-item flex flex-col items-center group transition duration-200">
-            <div class="p-1.5 rounded-xl group-hover:bg-white/50 transition">
-                <i class="fas fa-user text-xl mb-0.5 text-[#94a3b8] group-[.active]:text-[#4f46e5]"></i>
+            <div class="p-1.5 rounded-xl group-hover:bg-white/60 transition">
+                <i class="fas fa-user text-xl mb-0.5 text-[#B09B8B] group-[.active]:text-[#3E2310]"></i>
             </div>
             <span
-                class="w-1 h-1 rounded-full bg-[#4f46e5] opacity-0 group-[.active]:opacity-100 transition-opacity"></span>
+                class="w-1 h-1 rounded-full bg-[#6B3F1E] opacity-0 group-[.active]:opacity-100 transition-opacity"></span>
         </a>
     </div>
 
@@ -196,8 +203,8 @@
         tgApp.ready();
 
         // Telegram Theme Params Override
-        tgApp.setHeaderColor('#f8fafc');
-        tgApp.setBackgroundColor('#f8fafc');
+        tgApp.setHeaderColor('#f2e8dc');
+        tgApp.setBackgroundColor('#f2e8dc');
 
         // Navigation Active State Logic (Simple Client-side Check)
         const currentPath = window.location.pathname;

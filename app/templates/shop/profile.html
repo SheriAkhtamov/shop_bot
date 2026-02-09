@@ -18,7 +18,7 @@
 </div>
 
 {% if not user.phone %}
-<div class="mx-5 mb-6 bg-white border-2 border-dashed border-[#E0CCB7] rounded-2xl p-5 shadow-coffee">
+<div class="mx-5 mb-6 card-muted p-5">
     <div class="flex items-center gap-3 mb-2">
         <i class="fas fa-user-edit text-[#6B3F1E] text-xl"></i>
         <h3 class="text-[#3E2310] font-bold text-lg">Заполните профиль</h3>
@@ -27,7 +27,7 @@
         Укажите номер телефона, чтобы мы могли подтвердить заказ и связаться при доставке.
     </p>
     <a href="/shop/profile/edit"
-        class="w-full inline-flex items-center justify-center gap-2 bg-[#4A6B36] text-white font-bold py-3 px-4 rounded-xl shadow hover:bg-[#3e5c2d] active:scale-95 transition">
+        class="w-full inline-flex items-center justify-center gap-2 btn-secondary py-3 px-4 active:scale-95 transition">
         <span>Заполнить профиль</span>
         <i class="fas fa-arrow-right"></i>
     </a>
@@ -67,17 +67,17 @@
 </div>
 {% endif %}
 
-<div class="px-5 pb-32 space-y-6">
+<div class="px-5 pb-nav space-y-6">
 
     <!-- Menu Grid -->
     <div class="grid grid-cols-2 gap-4">
         <div onclick="location.href='/shop/favorites'"
-            class="bg-white p-4 rounded-2xl shadow-coffee active:scale-95 transition cursor-pointer flex flex-col items-center justify-center h-24">
+            class="card-surface p-4 active:scale-95 transition cursor-pointer flex flex-col items-center justify-center h-24">
             <i class="fas fa-heart text-[#A33B20] text-2xl mb-2"></i>
             <span class="text-xs font-bold text-[#3E2310] uppercase tracking-wide">Избранное</span>
         </div>
         <div onclick="location.href='#'"
-            class="bg-white p-4 rounded-2xl shadow-coffee active:scale-95 transition cursor-pointer flex flex-col items-center justify-center h-24 opacity-60">
+            class="card-surface p-4 active:scale-95 transition cursor-pointer flex flex-col items-center justify-center h-24 opacity-60">
             <i class="fas fa-cog text-[#8C735F] text-2xl mb-2"></i>
             <span class="text-xs font-bold text-[#3E2310] uppercase tracking-wide">Настройки</span>
         </div>
@@ -90,7 +90,7 @@
         {% if orders %}
         <div class="space-y-4">
             {% for order in orders %}
-            <div class="bg-white rounded-2xl p-5 shadow-coffee relative overflow-hidden group">
+            <div class="card-surface p-5 relative overflow-hidden group">
                 <div class="absolute top-0 right-0 p-3 bg-[#F9F9F9] rounded-bl-2xl">
                     <span class="text-[10px] font-bold uppercase px-2 py-1 rounded 
                             {% if order.status == 'new' %}text-blue-600 bg-blue-100
@@ -118,7 +118,7 @@
             {% endfor %}
         </div>
         {% else %}
-        <div class="text-center py-8 bg-white/50 rounded-2xl border-2 border-dashed border-[#E0CCB7]">
+        <div class="text-center py-8 card-muted">
             <p class="text-[#8C735F] mb-2 font-medium">История пуста</p>
             <div class="text-3xl opacity-50">📜</div>
         </div>

@@ -1,20 +1,24 @@
 {% extends "shop/base.html" %}
 
 {% block content %}
-<div class="bg-white sticky top-0 shadow-sm z-30 p-4 mb-2 flex items-center">
-    <a href="/shop/profile" class="mr-4 text-gray-600"><i class="fas fa-arrow-left"></i></a>
-    <h1 class="text-xl font-bold text-gray-800">Избранное ❤️</h1>
+<div class="sticky top-0 page-header z-30 px-5 py-4 flex items-center">
+    <a href="/shop/profile" class="mr-4 w-10 h-10 bg-white rounded-full flex items-center justify-center text-[#3E2310] shadow-sm active:scale-90 transition">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+    <h1 class="text-xl font-extrabold text-[#3E2310]">Избранное</h1>
 </div>
 
-<div class="px-4 pb-24">
+<div class="px-5 pb-nav">
     {% if products %}
         <div class="grid grid-cols-2 gap-4">
             {% include "shop/partials/product_list.html" %}
         </div>
     {% else %}
-        <div class="text-center py-10 text-gray-400">
-            <i class="far fa-heart text-4xl mb-2"></i>
-            <p>Вы еще ничего не добавили</p>
+        <div class="text-center py-10 card-muted">
+            <div class="text-4xl mb-2 text-[#C6A992]">
+                <i class="far fa-heart"></i>
+            </div>
+            <p class="text-[#8C735F] font-medium">Вы еще ничего не добавили</p>
         </div>
     {% endif %}
 </div>

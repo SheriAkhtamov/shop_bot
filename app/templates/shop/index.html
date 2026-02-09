@@ -2,13 +2,13 @@
 
 {% block content %}
 <!-- Шапка: Поиск и Язык -->
-<div class="sticky top-0 bg-[#F2E8DC]/90 backdrop-blur-md z-30 px-5 py-4 border-b border-white/20">
+<div class="sticky top-0 page-header z-30 px-5 py-4">
     <div class="flex justify-between items-center mb-4">
         <div>
             <h1 class="text-2xl font-extrabold text-[#3E2310] tracking-tight">UNICOM.</h1>
             <p class="text-xs text-[#8C735F] font-medium">Упаковка и расходники</p>
         </div>
-        <div class="flex space-x-3 text-sm font-bold bg-white/40 p-1.5 rounded-lg">
+        <div class="flex space-x-3 text-sm font-bold bg-white/50 p-1.5 rounded-lg border border-white/80">
             <!-- Переключатель языка -->
             <a href="/shop/set_lang?lang=ru"
                 class="px-2 rounded-md transition {% if user.language == 'ru' %}bg-[#6B3F1E] text-white shadow-sm{% else %}text-[#8C735F] hover:text-[#6B3F1E]{% endif %}">RU</a>
@@ -21,7 +21,7 @@
         <i class="fas fa-search absolute left-4 top-3.5 text-[#8C735F]"></i>
         <input type="text" oninput="searchProducts(this.value)"
             placeholder="{% if user.language == 'ru' %}Поиск товаров...{% else %}Mahsulotlarni qidirish...{% endif %}"
-            class="w-full bg-white/60 border border-[#E0CCB7] rounded-xl pl-11 pr-4 py-3 text-[#3E2310] placeholder-[#B09B8B] focus:outline-none focus:ring-2 focus:ring-[#6B3F1E]/20 focus:bg-white transition-all shadow-sm">
+            class="w-full input-surface pl-11 pr-4 py-3 text-[#3E2310] placeholder-[#B09B8B] focus:outline-none focus:ring-2 focus:ring-[#6B3F1E]/20 transition-all shadow-soft">
     </div>
 </div>
 
@@ -43,11 +43,11 @@
             <span>В наличии</span>
         </div>
         <div class="info-pill flex flex-col justify-center items-center">
-            <i class="fas fa-leaf mb-1 text-green-600"></i>
+            <i class="fas fa-leaf mb-1 text-[#4A6B36]"></i>
             <span>Эко-товары</span>
         </div>
         <div class="info-pill flex flex-col justify-center items-center">
-            <i class="fas fa-truck mb-1 text-blue-600"></i>
+            <i class="fas fa-truck mb-1 text-[#C6A992]"></i>
             <span>Доставка</span>
         </div>
     </div>
@@ -82,7 +82,7 @@
         {% for product in products[:5] %}
         {% set product_name = product.name_ru if user.language == 'ru' else product.name_uz %}
         {% set product_desc = product.description_ru if user.language == 'ru' else product.description_uz %}
-        <div class="min-w-[160px] bg-white rounded-2xl shadow-coffee p-3 active:scale-95 transition-transform duration-200"
+        <div class="min-w-[170px] card-surface p-3 active:scale-95 transition-transform duration-200"
             onclick="openProductModal('{{ product.id }}', '{{ product_name | replace('\'', '\\\'') | e }}', '{{ product_desc | default('', true) | replace('\'', '\\\'') | e }}', '{{ product.price }}', '{{ product.image_path }}', '{{ product.stock }}')">
             <div
                 class="bg-[#F9F9F9] rounded-xl p-2 mb-3 h-32 flex items-center justify-center relative overflow-hidden">
