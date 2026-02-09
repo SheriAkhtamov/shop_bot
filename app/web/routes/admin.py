@@ -1016,5 +1016,6 @@ async def mailing_send(
     return templates.TemplateResponse("admin/mailing.html", {
         "request": request, 
         "user": user, 
-        "message": f"Рассылка запущена для {len(ids)} пользователей. Она будет выполнена в фоновом режиме."
+        "message": f"Рассылка запущена для {len(ids)} пользователей. Она будет выполнена в фоновом режиме.",
+        "csrf_token": generate_csrf_token(request)
     })
