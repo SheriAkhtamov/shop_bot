@@ -20,11 +20,11 @@ class OrderCreateSchema(FormSchema):
         # Автоматически добавляем 998 если введены только 9 цифр
         if len(v) == 9:
             v = "998" + v
-        
-        # Accept international formats (9-15 digits after cleanup)
-        if len(v) < 9 or len(v) > 15:
-            raise ValueError("Неверный формат телефона. Введите номер в международном формате")
-        return v
+
+        if len(v) == 12 and v.startswith("998"):
+            return v
+
+        raise ValueError("Неверный формат телефона. Введите номер в формате 998XXXXXXXXX или XXXXXXXXX")
 
     @validator("address")
     def validate_address(cls, v, values):

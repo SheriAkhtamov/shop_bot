@@ -7,19 +7,21 @@ from sqlalchemy.orm import selectinload
 from app.database.core import async_session_maker
 from app.database.models import Order, PaymeTransaction, OrderItem, OrderRateLimit
 from app.services.order_service import OrderService
+from app.config import settings
 
 # logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 # logger = logging.getLogger("cleanup")
 
 async def cleanup_zombie_orders():
-    """Фоновая задача: отменяет неоплаченные заказы старше 30 минут и возвращает сток"""
+    """Фоновая задача: отменяет неоплаченные заказы старше таймаута и возвращает сток"""
     logger.info("Starting zombie orders cleanup worker...")
     try:
         while True:
             try:
                 async with async_session_maker() as session:
-                    threshold_order = datetime.utcnow() - timedelta(minutes=30)
-                    threshold_tx = datetime.utcnow() - timedelta(minutes=30)
+                    timeout_minutes = getattr(settings, "ORDER_PAYMENT_TIMEOUT_MINUTES", 720)
+                    threshold_order = datetime.utcnow() - timedelta(minutes=timeout_minutes)
+                    threshold_tx = datetime.utcnow() - timedelta(minutes=timeout_minutes)
 
                     order_ids_stmt = select(Order.id).where(
                         Order.status == "new",
