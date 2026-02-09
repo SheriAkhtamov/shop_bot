@@ -44,6 +44,7 @@ class ClickService:
         click_trans_id = kwargs.get('click_trans_id')
         service_id = kwargs.get('service_id')
         merchant_trans_id = kwargs.get('merchant_trans_id')
+        merchant_prepare_id = kwargs.get('merchant_prepare_id', '')
         amount = kwargs.get('amount')
         action = kwargs.get('action')
         sign_time = kwargs.get('sign_time')
@@ -53,7 +54,14 @@ class ClickService:
         
         # Формула из документации:
         # md5( click_trans_id + service_id + SECRET_KEY + merchant_trans_id + amount + action + sign_time )
-        text = f"{click_trans_id}{service_id}{secret_key}{merchant_trans_id}{amount}{action}{sign_time}"
+        # Для Complete (action=1) добавляется merchant_prepare_id.
+        if str(action) == "1":
+            text = (
+                f"{click_trans_id}{service_id}{secret_key}{merchant_trans_id}"
+                f"{merchant_prepare_id}{amount}{action}{sign_time}"
+            )
+        else:
+            text = f"{click_trans_id}{service_id}{secret_key}{merchant_trans_id}{amount}{action}{sign_time}"
         my_sign = hashlib.md5(text.encode('utf-8')).hexdigest()
 
         return my_sign == sign_string

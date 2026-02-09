@@ -72,13 +72,21 @@ class PaymeService:
         try:
             order_id = int(order_id)
         except (ValueError, TypeError):
-            raise PaymeException(PaymeErrors.ORDER_NOT_FOUND, {"ru": "Неверный ID заказа"})
+            raise PaymeException(
+                PaymeErrors.ORDER_NOT_FOUND,
+                {"ru": "Неверный ID заказа"},
+                data=settings.PAYME_ACCOUNT_FIELD,
+            )
 
         stmt = select(Order).where(Order.id == order_id)
         order = (await self.session.execute(stmt)).scalar_one_or_none()
 
         if not order:
-            raise PaymeException(PaymeErrors.ORDER_NOT_FOUND, {"ru": "Заказ не найден"})
+            raise PaymeException(
+                PaymeErrors.ORDER_NOT_FOUND,
+                {"ru": "Заказ не найден"},
+                data=settings.PAYME_ACCOUNT_FIELD,
+            )
 
         if order.order_type == "debt_repayment" and order.payment_method != "card":
             raise PaymeException(
@@ -131,7 +139,11 @@ class PaymeService:
             try:
                 order_id_int = int(order_id)
             except (ValueError, TypeError):
-                raise PaymeException(PaymeErrors.ORDER_NOT_FOUND, {"ru": "Неверный ID заказа"})
+                raise PaymeException(
+                    PaymeErrors.ORDER_NOT_FOUND,
+                    {"ru": "Неверный ID заказа"},
+                    data=settings.PAYME_ACCOUNT_FIELD,
+                )
             if transaction.order_id != order_id_int:
                 raise PaymeException(PaymeErrors.ORDER_AVAILABLE, {"ru": "Неверный ID заказа"})
             if transaction.state != 1:
@@ -156,7 +168,11 @@ class PaymeService:
         try:
             order_id = int(order_id)
         except (ValueError, TypeError):
-             raise PaymeException(PaymeErrors.ORDER_NOT_FOUND, {"ru": "Неверный ID заказа"})
+             raise PaymeException(
+                 PaymeErrors.ORDER_NOT_FOUND,
+                 {"ru": "Неверный ID заказа"},
+                 data=settings.PAYME_ACCOUNT_FIELD,
+             )
 
         try:
             await self._set_lock_timeout()
@@ -177,7 +193,11 @@ class PaymeService:
             raise
 
         if not order:
-            raise PaymeException(PaymeErrors.ORDER_NOT_FOUND, {"ru": "Заказ не найден"})
+            raise PaymeException(
+                PaymeErrors.ORDER_NOT_FOUND,
+                {"ru": "Заказ не найден"},
+                data=settings.PAYME_ACCOUNT_FIELD,
+            )
 
         if order.order_type == "debt_repayment" and order.payment_method != "card":
             raise PaymeException(
@@ -325,7 +345,11 @@ class PaymeService:
                 raise
             
             if not order:
-                raise PaymeException(PaymeErrors.ORDER_NOT_FOUND, {"ru": "Заказ не найден"})
+                raise PaymeException(
+                    PaymeErrors.ORDER_NOT_FOUND,
+                    {"ru": "Заказ не найден"},
+                    data=settings.PAYME_ACCOUNT_FIELD,
+                )
 
             if order.payment_method != "card":
                 raise PaymeException(
