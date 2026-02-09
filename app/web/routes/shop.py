@@ -6,7 +6,7 @@ from fastapi import APIRouter, Request, Depends, HTTPException, Query, Form
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_, update, insert
+from sqlalchemy import select, or_, update, insert, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
@@ -206,6 +206,12 @@ async def view_cart(request: Request, user: User = Depends(get_shop_user), sessi
             "stock_adjusted": stock_adjusted,
         },
     )
+
+@router.get("/api/cart/count")
+async def get_cart_count(user: User = Depends(get_shop_user), session: AsyncSession = Depends(get_db)):
+    stmt = select(func.sum(CartItem.quantity)).where(CartItem.user_id == user.id)
+    count = (await session.execute(stmt)).scalar() or 0
+    return {"count": count}
 
 @router.post("/api/cart/add/{product_id}", dependencies=[Depends(validate_csrf_header)])
 async def add_to_cart(product_id: int, user: User = Depends(get_shop_user), session: AsyncSession = Depends(get_db)):

@@ -454,6 +454,12 @@ class PaymeService:
                 "state": 2
             }
 
+        if transaction.state < 0:
+            raise PaymeException(
+                PaymeErrors.ALREADY_DONE,
+                {"ru": "Транзакция отменена или завершена"},
+            )
+
         raise PaymeException(PaymeErrors.CANT_CANCEL, {"ru": "Транзакция отменена"})
 
     async def cancel_transaction(self, payme_id: str, reason: int):

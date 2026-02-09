@@ -125,8 +125,7 @@ class ClickService:
             return {"error": ClickErrors.TRANSACTION_CANCELLED, "error_note": "Order expired"}
 
         # 3. Проверка суммы
-        order_total = Decimal(order.total_amount)
-        if amount != order_total:
+        if int(amount) != int(order.total_amount):
             return {"error": ClickErrors.INCORRECT_AMOUNT, "error_note": "Incorrect Amount"}
 
         # 4. Проверка статуса (если уже оплачен)
@@ -380,8 +379,7 @@ class ClickService:
             return {"error": ClickErrors.TRANSACTION_CANCELLED, "error_note": "Transaction cancelled"}
 
         # 5. Проводим оплату
-        order_total = Decimal(order.total_amount)
-        if amount != order_total:
+        if int(amount) != int(order.total_amount):
             return {"error": ClickErrors.INCORRECT_AMOUNT, "error_note": "Incorrect Amount"}
 
         user_locked = None
