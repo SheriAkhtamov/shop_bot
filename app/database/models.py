@@ -44,7 +44,7 @@ class UserAddress(Base):
 class Category(Base):
     __tablename__ = "categories"
     id: Mapped[int] = mapped_column(primary_key=True)
-    name_ru: Mapped[str] = mapped_column(String)
+    name_ru: Mapped[str] = mapped_column(String, unique=True)
     name_uz: Mapped[str] = mapped_column(String)
     
     products: Mapped[List["Product"]] = relationship(back_populates="category")
@@ -59,7 +59,7 @@ class Product(Base):
     description_ru: Mapped[str] = mapped_column(Text, nullable=True)
     description_uz: Mapped[str] = mapped_column(Text, nullable=True)
     
-    price: Mapped[int] = mapped_column(Integer) # Храним в сумах
+    price: Mapped[int] = mapped_column(BigInteger) # Храним в сумах
     stock: Mapped[int] = mapped_column(Integer, default=0)
     image_path: Mapped[str] = mapped_column(String)
 

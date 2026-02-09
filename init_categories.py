@@ -1,5 +1,5 @@
 import asyncio
-from sqlalchemy import select
+from sqlalchemy import insert
 from app.database.core import async_session_maker
 from app.database.models import Category
 
@@ -22,15 +22,14 @@ async def init_cats():
         print("⏳ Проверка категорий...")
         
         for cat_name in CATEGORIES_DATA:
-            stmt = select(Category.id).where(Category.name_ru == cat_name).limit(1)
+            stmt = (
+                insert(Category)
+                .values(name_ru=cat_name, name_uz=cat_name)
+                .on_conflict_do_nothing(index_elements=[Category.name_ru])
+            )
             result = await session.execute(stmt)
-            if result.scalar_one_or_none():
-                continue
-            # Создаем новую
-            # Пока ставим name_uz таким же, как name_ru (потом изменишь)
-            new_cat = Category(name_ru=cat_name, name_uz=cat_name)
-            session.add(new_cat)
-            print(f"➕ Добавлена категория: {cat_name}")
+            if result.rowcount:
+                print(f"➕ Добавлена категория: {cat_name}")
         
         await session.commit()
         print("🏁 Готово!")

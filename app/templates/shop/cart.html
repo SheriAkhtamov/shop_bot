@@ -113,4 +113,13 @@
     });
 </script>
 {% endif %}
+{% if stock_adjusted %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (typeof showToast === 'function') {
+            showToast('Количество некоторых товаров было скорректировано по наличию', 'info');
+        }
+    });
+</script>
+{% endif %}
 {% endblock %}
