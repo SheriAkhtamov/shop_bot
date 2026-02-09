@@ -1,16 +1,16 @@
 {% extends "shop/base.html" %}
 
 {% block content %}
-<div class="sticky top-0 bg-[#F2E8DC]/90 backdrop-blur-md z-30 px-5 py-4 border-b border-white/20 mb-4">
-    <h1 class="text-xl font-extrabold text-[#3E2310]">Корзина 🛒</h1>
+<div class="sticky top-0 page-header z-30 px-5 py-4 mb-4">
+    <h1 class="text-xl font-extrabold text-[#3E2310]">Корзина</h1>
 </div>
 
-<div class="px-5 pb-32">
+<div class="px-5 pb-nav">
     {% if cart_items %}
     <form action="/shop/checkout" method="GET" id="cart-form">
         {% for item in cart_items %}
         <div id="cart-item-{{ item.id }}"
-            class="cart-item-row bg-white rounded-2xl shadow-coffee p-4 mb-4 flex items-center relative transition-transform duration-300 {% if item.unavailable %}opacity-60 bg-gray-50{% endif %}">
+            class="cart-item-row card-surface p-4 mb-4 flex items-center relative transition-transform duration-300 {% if item.unavailable %}opacity-60 bg-gray-50{% endif %}">
             <!-- Selection Checkbox (Custom Style) -->
             <div class="mr-4">
                 <input type="checkbox" name="items" value="{{ item.id }}" data-price="{{ item.product.price }}"
@@ -68,7 +68,7 @@
         <h2 class="text-xl font-bold text-[#3E2310] mb-2">Корзина пуста</h2>
         <p class="text-[#8C735F] mb-8 px-10 text-sm">Похоже, вы еще не выбрали свой идеальный кофе.</p>
         <a href="/shop"
-            class="bg-[#6B3F1E] text-white px-8 py-3.5 rounded-xl font-bold shadow-lg shadow-[#6B3F1E]/30 inline-block active:scale-95 transition">
+            class="btn-primary px-8 py-3.5 inline-flex items-center justify-center active:scale-95 transition">
             Перейти в меню
         </a>
     </div>
@@ -77,15 +77,15 @@
 
 <!-- Receipt Style Summary -->
 {% if cart_items %}
-<div class="fixed bottom-[80px] w-full px-5 z-30">
-    <div class="bg-white rounded-2xl p-5 shadow-[0_-10px_40px_rgba(107,63,30,0.15)] relative">
+<div class="fixed bottom-nav w-full px-5 z-30">
+    <div class="card-surface p-5 relative">
         <!-- Receipt Zig-Zag Top (Pseudo-element or SVG usually, visually simulated here with simple border) -->
         <div class="flex justify-between items-center mb-4 border-b border-dashed border-[#E0CCB7] pb-4">
             <span class="text-[#8C735F] font-medium">Итого к оплате</span>
             <span class="text-2xl font-extrabold text-[#3E2310]"><span id="total-price">0</span> сум</span>
         </div>
         <button form="cart-form" id="checkout-btn"
-            class="w-full bg-[#6B3F1E] text-white py-3.5 rounded-xl font-bold text-lg shadow-lg shadow-[#6B3F1E]/20 active:scale-95 transition-all flex justify-center items-center space-x-2">
+            class="w-full btn-primary py-3.5 text-lg active:scale-95 transition-all flex justify-center items-center space-x-2">
             <span>Оформить заказ</span>
             <i class="fas fa-arrow-right text-sm"></i>
         </button>
