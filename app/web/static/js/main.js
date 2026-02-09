@@ -298,4 +298,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.querySelector('.cart-checkbox')) calculateTotal();
 
     // Checkout Form Logic can stay similar but styled better in HTML
+    (async () => {
+        try {
+            const res = await fetch('/shop/api/cart/count');
+            const data = await res.json();
+            updateCartBadge(data.count);
+        } catch (e) {
+            console.error(e);
+        }
+    })();
 });

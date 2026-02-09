@@ -11,6 +11,7 @@
 </div>
 
 <form action="/shop/order/create" method="POST" class="px-5 pb-10">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     {% for item_id in item_ids %}
     <input type="hidden" name="item_ids" value="{{ item_id }}">
     {% endfor %}
@@ -135,4 +136,65 @@
         <i class="fas fa-check ml-2"></i>
     </button>
 </form>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.querySelector('form[action="/shop/order/create"]');
+        if (!form) return;
+
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn ? submitBtn.innerHTML : '';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Обработка...';
+            }
+
+            try {
+                const formData = new FormData(this);
+                const csrfToken =
+                    formData.get('csrf_token') ||
+                    document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+                const response = await fetch(this.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRF-Token': csrfToken
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'redirect') {
+                    window.location.href = result.url;
+                    return;
+                }
+                if (result.status === 'success') {
+                    window.location.href = `/shop/order/success/${result.order_id}`;
+                    return;
+                }
+
+                if (typeof showToast === 'function') {
+                    showToast(result.message || 'Ошибка создания заказа', 'error');
+                } else {
+                    alert(result.message || 'Ошибка');
+                }
+            } catch (error) {
+                console.error(error);
+                if (typeof showToast === 'function') {
+                    showToast('Ошибка соединения', 'error');
+                } else {
+                    alert('Ошибка соединения');
+                }
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}

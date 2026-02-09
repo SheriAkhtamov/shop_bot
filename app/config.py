@@ -42,7 +42,9 @@ class Settings:
 
     PAYME_ACCOUNT_FIELD = "order_id"
     PAYME_MIN_AMOUNT = 100000 
-    ORDER_PAYMENT_TIMEOUT_MINUTES = 20
+    # Таймаут оплаты онлайн-заказов (Payme/Click), в минутах.
+    # По требованиям Payme срок жизни транзакции 12 часов (720 минут).
+    ORDER_PAYMENT_TIMEOUT_MINUTES = 720
     MIN_ORDER_AMOUNT = 100
     # Код упаковки по умолчанию (без упаковки). При необходимости заменить на код из ОФД.
     DEFAULT_PACKAGE_CODE = "000000"

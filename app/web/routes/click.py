@@ -35,6 +35,7 @@ async def click_complete(
     service_id: int = Form(...),
     click_paydoc_id: int = Form(...),
     merchant_trans_id: str = Form(...),
+    merchant_prepare_id: str = Form(None),
     amount: str = Form(...),
     action: int = Form(...),
     error: int = Form(0),

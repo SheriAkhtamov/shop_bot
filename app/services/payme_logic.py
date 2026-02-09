@@ -31,6 +31,16 @@ class PaymeException(Exception):
 
 class PaymeService:
     LOCK_TIMEOUT = "5s"
+    DEFAULT_TIMEOUT_MINUTES = 720
+
+    def _transaction_timeout_minutes(self) -> int:
+        return getattr(settings, "ORDER_PAYMENT_TIMEOUT_MINUTES", self.DEFAULT_TIMEOUT_MINUTES)
+
+    def _transaction_timeout_ms(self) -> int:
+        return self._transaction_timeout_minutes() * 60 * 1000
+
+    def _transaction_timeout_seconds(self) -> int:
+        return self._transaction_timeout_minutes() * 60
 
     def __init__(self, session: AsyncSession):
         self.session = session
@@ -62,13 +72,21 @@ class PaymeService:
         try:
             order_id = int(order_id)
         except (ValueError, TypeError):
-            raise PaymeException(PaymeErrors.ORDER_NOT_FOUND, {"ru": "Неверный ID заказа"})
+            raise PaymeException(
+                PaymeErrors.ORDER_NOT_FOUND,
+                {"ru": "Неверный ID заказа"},
+                data=settings.PAYME_ACCOUNT_FIELD,
+            )
 
         stmt = select(Order).where(Order.id == order_id)
         order = (await self.session.execute(stmt)).scalar_one_or_none()
 
         if not order:
-            raise PaymeException(PaymeErrors.ORDER_NOT_FOUND, {"ru": "Заказ не найден"})
+            raise PaymeException(
+                PaymeErrors.ORDER_NOT_FOUND,
+                {"ru": "Заказ не найден"},
+                data=settings.PAYME_ACCOUNT_FIELD,
+            )
 
         if order.order_type == "debt_repayment" and order.payment_method != "card":
             raise PaymeException(
@@ -107,8 +125,8 @@ class PaymeService:
         if time_ms > current_time + 60000:
             raise PaymeException(PaymeErrors.INVALID_AMOUNT, {"ru": "Неверная дата транзакции (будущее время)"})
 
-        # Check if transaction is too old (12 hours)
-        if abs(current_time - time_ms) > 43200000: 
+        # Check if transaction is too old (configured timeout)
+        if abs(current_time - time_ms) > self._transaction_timeout_ms(): 
              raise PaymeException(PaymeErrors.INVALID_AMOUNT, {"ru": "Неверная дата транзакции (таймаут)"})
 
         stmt_tx = select(PaymeTransaction).where(PaymeTransaction.payme_id == payme_id)
@@ -121,7 +139,11 @@ class PaymeService:
             try:
                 order_id_int = int(order_id)
             except (ValueError, TypeError):
-                raise PaymeException(PaymeErrors.ORDER_NOT_FOUND, {"ru": "Неверный ID заказа"})
+                raise PaymeException(
+                    PaymeErrors.ORDER_NOT_FOUND,
+                    {"ru": "Неверный ID заказа"},
+                    data=settings.PAYME_ACCOUNT_FIELD,
+                )
             if transaction.order_id != order_id_int:
                 raise PaymeException(PaymeErrors.ORDER_AVAILABLE, {"ru": "Неверный ID заказа"})
             if transaction.state != 1:
@@ -146,7 +168,11 @@ class PaymeService:
         try:
             order_id = int(order_id)
         except (ValueError, TypeError):
-             raise PaymeException(PaymeErrors.ORDER_NOT_FOUND, {"ru": "Неверный ID заказа"})
+             raise PaymeException(
+                 PaymeErrors.ORDER_NOT_FOUND,
+                 {"ru": "Неверный ID заказа"},
+                 data=settings.PAYME_ACCOUNT_FIELD,
+             )
 
         try:
             await self._set_lock_timeout()
@@ -167,7 +193,11 @@ class PaymeService:
             raise
 
         if not order:
-            raise PaymeException(PaymeErrors.ORDER_NOT_FOUND, {"ru": "Заказ не найден"})
+            raise PaymeException(
+                PaymeErrors.ORDER_NOT_FOUND,
+                {"ru": "Заказ не найден"},
+                data=settings.PAYME_ACCOUNT_FIELD,
+            )
 
         if order.order_type == "debt_repayment" and order.payment_method != "card":
             raise PaymeException(
@@ -214,7 +244,10 @@ class PaymeService:
         )
         existing_active = (await self.session.execute(stmt_check)).scalar_one_or_none()
         if existing_active:
-             raise PaymeException(PaymeErrors.ORDER_AVAILABLE, {"ru": "Транзакция уже в процессе"})
+            existing_active.state = -1
+            existing_active.reason = 4
+            existing_active.cancel_time = datetime.utcnow()
+            await self.session.flush()
 
         new_tx = PaymeTransaction(
             payme_id=payme_id,
@@ -283,10 +316,10 @@ class PaymeService:
 
         if transaction.state == 1:
             if transaction.create_time:
-                # Check timeout (12 hours)
+                # Check timeout (configured)
                 t_create = transaction.create_time
                 diff = (datetime.utcnow() - t_create).total_seconds()
-                if diff > 43200:
+                if diff > self._transaction_timeout_seconds():
                     transaction.state = -1
                     transaction.reason = 4
                     transaction.cancel_time = datetime.utcnow()
@@ -312,7 +345,11 @@ class PaymeService:
                 raise
             
             if not order:
-                raise PaymeException(PaymeErrors.ORDER_NOT_FOUND, {"ru": "Заказ не найден"})
+                raise PaymeException(
+                    PaymeErrors.ORDER_NOT_FOUND,
+                    {"ru": "Заказ не найден"},
+                    data=settings.PAYME_ACCOUNT_FIELD,
+                )
 
             if order.payment_method != "card":
                 raise PaymeException(
@@ -440,6 +477,12 @@ class PaymeService:
                 "transaction": str(transaction.id),
                 "state": 2
             }
+
+        if transaction.state < 0:
+            raise PaymeException(
+                PaymeErrors.ALREADY_DONE,
+                {"ru": "Транзакция отменена или завершена"},
+            )
 
         raise PaymeException(PaymeErrors.CANT_CANCEL, {"ru": "Транзакция отменена"})
 

@@ -6,7 +6,7 @@ from fastapi import APIRouter, Request, Depends, HTTPException, Query, Form
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_, update, insert
+from sqlalchemy import select, or_, update, insert, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
@@ -173,7 +173,8 @@ async def view_cart(request: Request, user: User = Depends(get_shop_user), sessi
     # Logic to handle ghost items
     final_items = []
     items_to_delete = []
-    removed_inactive = False
+    removed_inactive = request.query_params.get("removed") == "1"
+    stock_adjusted = request.query_params.get("stock_adjusted") == "1"
     
     for item in cart_items:
         if not item.product:
@@ -202,8 +203,15 @@ async def view_cart(request: Request, user: User = Depends(get_shop_user), sessi
             "cart_items": final_items,
             "csrf_token": csrf_token,
             "removed_inactive": removed_inactive,
+            "stock_adjusted": stock_adjusted,
         },
     )
+
+@router.get("/api/cart/count")
+async def get_cart_count(user: User = Depends(get_shop_user), session: AsyncSession = Depends(get_db)):
+    stmt = select(func.sum(CartItem.quantity)).where(CartItem.user_id == user.id)
+    count = (await session.execute(stmt)).scalar() or 0
+    return {"count": count}
 
 @router.post("/api/cart/add/{product_id}", dependencies=[Depends(validate_csrf_header)])
 async def add_to_cart(product_id: int, user: User = Depends(get_shop_user), session: AsyncSession = Depends(get_db)):
@@ -371,7 +379,7 @@ async def checkout_page(request: Request, items: List[int] = Query(None), user: 
         for item in unavailable_items:
             await session.delete(item)
         await session.commit()
-        return RedirectResponse("/shop/cart", status_code=303)
+        return RedirectResponse("/shop/cart?removed=1", status_code=303)
     stock_adjusted = False
     for item in selected_items:
         available_stock = item.product.stock if item.product and item.product.stock is not None else 0
@@ -383,7 +391,7 @@ async def checkout_page(request: Request, items: List[int] = Query(None), user: 
                 item.quantity = available_stock
     if stock_adjusted:
         await session.commit()
-        return RedirectResponse("/shop/cart", status_code=303)
+        return RedirectResponse("/shop/cart?stock_adjusted=1", status_code=303)
     total_amount = sum(item.product.price * item.quantity for item in selected_items)
     total_count = sum(item.quantity for item in selected_items)
     csrf_token = generate_csrf_token(request)
